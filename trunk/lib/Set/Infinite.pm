@@ -132,7 +132,6 @@ sub _function2 {
 }
 
 
-# quantize: splits in same-size subsets
 sub quantize {
     my $self = shift;
     $self->trace_open(title=>"quantize") if $TRACE; 
@@ -141,61 +140,10 @@ sub quantize {
     if (($self->{too_complex}) or 
         (defined $min[0] && $min[0] == $neg_inf) or 
         (defined $max[0] && $max[0] == $inf)) {
-        # $self->trace(title=>"quantize:backtrack"); 
-        my $b = $self->_function( 'quantize', @_ );
 
-        # TODO: find out how to calculate 'last'
-        $b->{last} = [ undef, 0 ];
-
-        if (defined $min[0] ) {    # && ($min[0] != $neg_inf) ) {
-            my $first;
-            if (( $min[0] == $neg_inf ) || ( $min[0] == $inf )) {
-                $first = $self->new( $min[0] );
-                $b->{first} = [$first, $b];  # link to itself!
-            }
-            else {
-                $first = $self->new( $min[0] )->quantize(@_);
-                # warn "   quantize first = $first";
-                # move $self->min ahead
-                @{$b->{first}} = ($first, 
-                    $b->{parent}->
-                        _function2( 'intersection', $first->complement )->
-                        _function( 'quantize', @_ ) );
-            }
-
-            my $last;
-            if (( $max[0] == $neg_inf ) || ( $max[0] == $inf )) {
-                $last = $self->new( $max[0] );
-                @{$b->{last}} = ($last, $b); # link to itself!
-            }
-            else {
-                # warn "$self max @max";
-                my $max = $max[0];
-                # $max -= 1e-9 if $max[1];  TODO: fix open_end
-                $last = $self->new( $max )->quantize(@_);
-                if ($max[1]) {
-                    # open_end
-                    my $min0 = $last->min;
-                    if ($min0 <= $max) {
-                        my $last0 = $self->new( $last->min - 1e-9 )->quantize(@_);
-                        # warn "   quantize last = $last0 , $last";
-                        $last = $last0;
-                    }
-                }
-                # move $self->max back
-                @{$b->{last}} = ($last, $b->{parent}->
-                        _function2( 'intersection', $last->complement )->
-                        _function( 'quantize', @_ ) );
-            }
-
-            $b->trace_close( arg => $b ) if $TRACE;
-            return $b;
-        }
-
-        $b->trace_close( arg => $b ) if $TRACE;
-        return $b;
+        return $self->_function( 'quantize', @_ );
     }
-    # $self->trace(title=>"quantize"); 
+
     my @a;
     my %rule = @_;
     my $b = $self->new();    
@@ -209,9 +157,7 @@ sub quantize {
 
     my ($min, $open_begin) = $parent->min_a;
 
-    # print " [MIN:$min] \n";
     unless (defined $min) {
-        # print " [NULL!]\n";
         $self->trace_close( arg => $b ) if $TRACE;
         return $b;    
     }
@@ -566,6 +512,19 @@ my %_first = (
             $tail = $tail->_function2( 'union', $more ) if defined $more;
             return ($first, $tail);
         },
+    'quantize' =>
+        sub {
+            my $self = $_[0];
+            my @min = $self->{parent}->min_a;
+            if ( $min[0] == $neg_inf || $min[0] == $inf ) {
+                return ( $self->new( $min[0] ) , $self->copy );
+            }
+            my $first = $self->new( $min[0] )->quantize( @{$self->{param}} );
+            return ( $first,
+                     $self->{parent}->
+                        _function2( 'intersection', $first->complement )->
+                        _function( 'quantize', @{$self->{param}} ) );
+        },
     'tolerance' =>
         sub {
             my $self = $_[0];
@@ -763,6 +722,23 @@ my %_last = (
             ($last, $more) = $last->last;
             $tail = $tail->_function2( 'union', $more ) if defined $more;
             return ($last, $tail);
+        },
+    'quantize' =>
+        sub {
+            my $self = $_[0];
+            my @max = $self->{parent}->max_a;
+            if (( $max[0] == $neg_inf ) || ( $max[0] == $inf )) {
+                return ( $self->new( $max[0] ) , $self->copy );
+            }
+            my $last = $self->new( $max[0] )->quantize( @{$self->{param}} );
+            if ($max[1]) {  # open_end
+                    if ( $last->min <= $max[0] ) {
+                        $last = $self->new( $last->min - 1e-9 )->quantize( @{$self->{param}} );
+                    }
+            }
+            return ( $last, $self->{parent}->
+                        _function2( 'intersection', $last->complement )->
+                        _function( 'quantize', @{$self->{param}} ) );
         },
     'tolerance' =>
         sub {

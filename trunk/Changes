@@ -2,6 +2,7 @@ Revision history for Perl extension Set::Infinite.
 
     added more tests: intersects/until/select
     optimized select()
+    refactored quantize()
 
 0.5303
     removed Set::Infinite::Date
