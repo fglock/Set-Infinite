@@ -528,6 +528,19 @@ sub until {
     return $u;    
 }
 
+sub start_set {
+    return $_[0]->iterate(
+        sub { $_[0]->min }
+    );
+}
+
+
+sub end_set {
+    return $_[0]->iterate(
+        sub { $_[0]->max }
+    );
+}
+
 sub union {
     my $a1 = shift;
     my $b1;
