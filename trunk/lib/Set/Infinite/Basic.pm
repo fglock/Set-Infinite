@@ -95,6 +95,7 @@ sub _simple_intersects {
 sub _simple_complement {
     my $self = $_[0];
     if ($self->{b} == $inf) {
+        return if $self->{a} == $neg_inf;
         return { a => $neg_inf, 
                  b => $self->{a}, 
                  open_begin => 1, 

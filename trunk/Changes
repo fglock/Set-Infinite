@@ -1,5 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
+- bugfix: complement of the universal set is the empty set
+
 0.60
 - _cleanup() / _no_cleanup() are obsolete
 - easier syntax to iterate()
