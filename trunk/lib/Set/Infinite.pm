@@ -1784,6 +1784,12 @@ sub max_a {
     return $self->SUPER::max_a;
 };
 
+sub count {
+    my ($self) = shift;
+    return $inf if $self->{too_complex};
+    return $self->SUPER::count;
+}
+
 sub size { 
     my ($self) = shift;
     my $tmp;
@@ -1979,6 +1985,10 @@ set bounded by -inf or inf.
 =head2 size
 
     $i = $a->size;  
+
+=head2 count
+
+    $i = $a->count;
 
 =head1 OVERLOADED LANGUAGE OPERATORS
 
