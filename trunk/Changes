@@ -1,5 +1,6 @@
 Revision history for Perl extension Set::Infinite.
 
+- simplified "offset"; fixed "fixtype"
 - added "separators" test in t/infinite.t
 - is_proper_subset / is_disjoint may return 'undef'
 - variables $a, $b renamed

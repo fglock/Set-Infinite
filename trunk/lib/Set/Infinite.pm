@@ -831,20 +831,6 @@ sub offset {
     my ($interval, $ia, $i);
     $param{mode} = 'offset' unless $param{mode};
 
-    # optimization for 1-parameter offset
-    if (($param{mode} eq 'begin') and ($#{$param{value}} == 1) and
-        ($param{value}[0] == $param{value}[1]) and
-        ($param{value}[0] == 0) ) {
-            # offset == zero
-            $b1->{list} = [ 
-                 map { { a => $_->{a} , b => $_->{a},
-                         open_begin => 0 , open_end => 0 
-                       } }  @{ $self->{list} } ];
-            $b1->{cant_cleanup} = 1;
-            $self->trace_close( arg => $b1 ) if $TRACE;
-            return $b1;
-    }
-
     unless (ref($param{value}) eq 'ARRAY') {
         $param{value} = [0 + $param{value}, 0 + $param{value}];
     }
@@ -876,14 +862,6 @@ sub offset {
             if ($this == $next) {
                 $open_end = $open_begin;
             }
-            # skip this if don't need to "fixtype"
-            if ($self->{fixtype}) {
-                # bless results into 'type' class
-                if (ref($this) ne ref($ia) ) {
-                    $this = $ia->new($this);
-                    $next = $ia->new($next);
-                }
-            } 
             push @a, { a => $this , b => $next ,
                        open_begin => $open_begin , open_end => $open_end };
         }  # parts
@@ -892,6 +870,7 @@ sub offset {
     $b1->{list} = \@a;        # change data
     $b1->{cant_cleanup} = 1; 
     $self->trace_close( arg => $b1 ) if $TRACE;
+    $b1 = $b1->fixtype if $self->{fixtype};
     return $b1;
 }
 

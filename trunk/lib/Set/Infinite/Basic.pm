@@ -281,9 +281,10 @@ sub fixtype {
     $self = $self->copy;
     $self->{fixtype} = 1;
     my $type = $self->type;
+    return $self unless $type;
     foreach (@{$self->{list}}) {
-        $_->{a} = $type->new($_->{a}) unless ref($_->{a});
-        $_->{b} = $type->new($_->{b}) unless ref($_->{b});
+        $_->{a} = $type->new($_->{a}) unless ref($_->{a}) eq $type;
+        $_->{b} = $type->new($_->{b}) unless ref($_->{b}) eq $type;
     }
     return $self;
 }
