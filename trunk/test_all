@@ -5,11 +5,10 @@
 
 use strict;
 
+# DateTime::Span and DateTime::SpanSet are tested inside DateTime::Set
 my @tests = qw(
     Set::Infinite
     DateTime::Set
-    DateTime::Span
-    DateTime::SpanSet
     DateTime::Event::Recurrence
     DateTime::Event::ICal
 );
