@@ -1,5 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
+    optimized select()
+
 0.5303
     removed Set::Infinite::Date
     removed /_eg directory

@@ -309,6 +309,15 @@ sub select {
     my $last;
     if ( @by ) 
     {
+        if ( ! $self->is_too_complex ) 
+        {
+            $res = $self->new;
+            my @a;
+            @a = grep { defined $_ } @{ $self->{list} }[ @by ] ;
+            $res->{list} = \@a;
+        }
+        else
+        {
             my ( @pos_by, @neg_by );
             for ( @by ) {
                 ( $_ < 0 ) ? push @neg_by, $_ :
@@ -335,6 +344,7 @@ sub select {
 
             # TODO: use 'push' instead of 'union'
             $res = $first->union( $last );
+        }
     }
     else
     {
@@ -344,12 +354,21 @@ sub select {
     return $res if $count == $inf;
     my $count_set = $self->new();
     $count_set->{cant_cleanup} = 1;
-    while ( $res ) {
+    if ( ! $self->is_too_complex )
+    {
+        my @a;
+        @a = grep { defined $_ } @{ $res->{list} }[ 0 .. $count - 1 ] ;
+        $count_set->{list} = \@a;
+    }
+    else
+    {
+        while ( $res ) {
             ( $first, $res ) = $res->first;
             last unless $first;
             push @{$count_set->{list}}, $first->{list}[0];
             $count--;
             last if $count <= 0;
+        }
     }
     return $count_set;
 }
