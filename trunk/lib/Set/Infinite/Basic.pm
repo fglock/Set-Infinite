@@ -680,6 +680,10 @@ sub empty_set {
     $_[0]->new;
 }
 
+sub universal_set {
+    $_[0]->new( $neg_inf, $inf );
+}
+
 sub minus {
     shift->complement( @_ );
 }
@@ -849,6 +853,13 @@ This module does not support recurrences. Recurrences are implemented in Set::In
 Creates an empty_set.
 
 If called from an existing set, the empty set inherits
+the "type" and "density" characteristics.
+
+=head2 universal_set
+
+Creates a set containing "all" possible elements.
+
+If called from an existing set, the universal set inherits
 the "type" and "density" characteristics.
 
 =head2 until

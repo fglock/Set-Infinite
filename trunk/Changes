@@ -1,6 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
 - New methods:
+  universal_set
   empty_set
   minus / difference (same as "complement")
   simmetric_difference

@@ -1474,6 +1474,13 @@ Creates an empty set.
 If called from an existing set, the empty set inherits
 the "type" and "density" characteristics.
 
+=head2 universal_set
+
+Creates a set containing "all" possible elements.
+
+If called from an existing set, the universal set inherits
+the "type" and "density" characteristics.
+
 =head1 SET FUNCTIONS
 
 =head2 union

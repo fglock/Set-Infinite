@@ -13,7 +13,7 @@ my $neg_inf = -$inf;
 my $errors = 0;
 my $test = 0;
 
-print "1..80\n";
+print "1..81\n";
 
 sub test {
 	my ($header, $sub, $expected) = @_;
@@ -65,6 +65,8 @@ test ("$a union (10..13)  ", '$a->union(10, 13)', "[10..13],[16..17]"); # 5
 # simmetric_difference
 test ("$a simmetric_difference (10..16.5)  ", '$a->simmetric_difference(10, 16.5)', "[10..16),(16.5..17]"); # 5.5
 
+# universal_set
+test ("universal_set ", 'Set::Infinite->universal_set', "($neg_inf..$inf)" );
 
 # print "Operations on open sets\n";
 $a = Set::Infinite->new(1,$inf);
