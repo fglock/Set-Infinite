@@ -1500,7 +1500,6 @@ gives
 
     [0..2), [5..6), [7..10)
 
-Note: this function is still experimental.
 
 =head2 quantize
 

@@ -5,6 +5,14 @@ Set::Infinite TODO
       $set = Set::Infinite->new( -10, 0 );
       creates a set with "-10" instead of [-10,0]
 
+    - parser
+
+    - _quantize_span should only be used inside backtrack()
+
+    - provide a constructor to build open sets
+
+    - provide a constructor that allow for un-ordered and overlapping spans
+
     - verify and fix unbalanced trace_open/trace_close 
 
     - move _cleanup to S::I::Basic
