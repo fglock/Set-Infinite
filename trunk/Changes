@@ -1,6 +1,10 @@
 Revision history for Perl extension Set::Infinite.
 
-0.5308
+0.5401  2003-10-21
+    specifying start > end in a constructor is a fatal error.
+
+0.54
+0.5308  2003-10-16
     clears mod_perl warnings - change the order of modules and constants.
     Patch by Dan Kubb
 

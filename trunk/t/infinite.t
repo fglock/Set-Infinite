@@ -179,7 +179,7 @@ test ("Interval: integer",'$a',"[-1..4],[6..8]");
 
 # print "Intersects:\n";
 
-$a = Set::Infinite->new(2,1);
+$a = Set::Infinite->new(1,2);
 test ("Interval:",'$a',"[1..2]");
 test ("intersects 2.5 : ", '$a->intersects(2.5)', "0");
 test ("intersects 1.5 : ", '$a->intersects(1.5)', "1");
@@ -200,7 +200,7 @@ test ("Union 0.5 .. 1.5 : ", '$a->union(Set::Infinite->new(0.5,1.5))', "[0.5..2]
 test ("Union 3.0 .. 4.0 : ", '$a->union(Set::Infinite->new(3.0,4.0))', "[1..2],[3..4]");
 test ("Union 0.0 .. 4.0 5 .. 6 : ", '$a->union(Set::Infinite->new([0.0,4.0],[5.0,6.0]))', "[0..4],[5..6]");
 
-$a = Set::Infinite->new(2,1);
+$a = Set::Infinite->new(1,2);
 test ("Interval",'$a',"[1..2]");
 test ("intersection 2.5 : ", '$a->intersection(2.5)', "");
 test ("intersection 1.5 : ", '$a->intersection(1.5)', "1.5");
@@ -213,8 +213,8 @@ test ("intersection 2.1 .. 2.3 : ", '$a->intersection(Set::Infinite->new(2.1,2.3
 test ("Union 5.5 : ", '$a->union(5.5)', "[1..2],5.5");
 test ("intersection 0.0 .. 4.0 5 .. 6 : ", '$a->intersection(Set::Infinite->new([0.0,4.0],[5.0,6.0]))', "[1..2]");
 
-$a = Set::Infinite->new(2,1, 4,5);
-$b = Set::Infinite->new(2.1,1.1, 4.1,5.1);
+$a = Set::Infinite->new(1,2, 4,5);
+$b = Set::Infinite->new(1.1,2.1, 4.1,5.1);
 test ("intersection $a with $b", '$a->intersection($b)', "[1.1..2],[4.1..5]");
 test ("size of $b is : ", '$b->size', "2");
 test ("span of $b is : ", '$b->span', "[1.1..5.1]");
