@@ -784,10 +784,15 @@ sub max_a {
 sub size { 
     my ($self) = shift;
     my $tmp;
-    my $size = 0;
+    my $size;  # = 0;
     foreach(0 .. $#{$self->{list}}) {
         # next unless defined $self->{list}->[$_];
-        $size += $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
+        if ( $size ) {
+            $size += $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
+        }
+        else {
+            $size = $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
+        }
         $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
         $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
      }

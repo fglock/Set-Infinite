@@ -24,7 +24,7 @@ use vars qw( @ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } , qw(inf new $inf trace_open trace_close) );
 @EXPORT = qw();
 
-$VERSION = '0.49';
+$VERSION = '0.50';
 
 use Set::Infinite::Arithmetic;
 
