@@ -12,8 +12,10 @@ use Set::Infinite qw($inf);
 my $neg_inf = -$inf;
 my $errors = 0;
 my $test = 0;
+my $set1;
+my $set2;
 
-print "1..81\n";
+print "1..82\n";
 
 sub test {
 	my ($header, $sub, $expected) = @_;
@@ -40,13 +42,38 @@ sub stats {
 	}
 }
 
+Set::Infinite->separators( 
+        '[', ']',    # a closed interval
+        '(', ')',    # an open interval
+        '..',        # number separator
+        ',',         # list separator
+        '', '',      # set delimiter  '{' '}'
+    );
 
-$a = Set::Infinite->new([1],[2],[3],[4]);
-test ("slice  ", '$a', "1,2,3,4"); # 1
+$set = $set; # clear warnings
+$set = Set::Infinite->new([1],[2],[3],[4]);
+test ("slice  ", '$set', "1,2,3,4"); # 1
+
+Set::Infinite->separators(
+        '', '',      # a closed interval
+        '', '',      # an open interval
+        '-',         # number separator
+        ', ',        # list separator
+        '{ ', ' }',  # set delimiter  
+    );
+test ("separators  ", '$set', "{ 1, 2, 3, 4 }"); # 1.1
 
 # slice
 $a = Set::Infinite->new(1..3);
-test ("slice  ", '$a', "[1..2],3"); # 2
+test ("slice  ", '$a', "{ 1-2, 3 }"); # 2
+
+Set::Infinite->separators(
+        '[', ']',    # a closed interval
+        '(', ')',    # an open interval
+        '..',        # number separator
+        ',',         # list separator
+        '', '',      # set delimiter  '{' '}'
+    );
 
 # slice
 $a = Set::Infinite->new([10..13,15,17]);

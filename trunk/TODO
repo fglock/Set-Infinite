@@ -1,7 +1,6 @@
 Set::Infinite TODO 
 
-- Methods "is_proper_subset" and "is_disjoint"
-  should test for 'undef' when calling set functions. 
+- document "separators" - use example from t/infinite.t
 
 - quantize() should use "iterate"
 
@@ -19,7 +18,16 @@ Set::Infinite TODO
 - New methods: map / grep
   From a discussion with Andrew Pimlott and Dave Rolsky
   Find out how to implement "block" syntax 
-  (" {} " instead of " sub{} ")
+  (" {} " instead of " sub{} ") -- use '&' prototype
+  - test under 5.005_03
+  
+  update: It looks like this is not possible:
+  http://www.perlmonks.org/index.pl?node_id=312978
+  from perlsub:
+  "Pretty much the exclusive domain of prototypes is to 
+  make a perl sub act like a builtin. Once you call it 
+  via $subref-> or &subname, you are no longer treating 
+  it as a builtin and prototypes are ignored."
 
 - Redo POD
 - difference between "size" and "count"

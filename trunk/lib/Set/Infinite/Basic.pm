@@ -43,7 +43,8 @@ BEGIN {
         '[', ']',    # a closed interval
         '(', ')',    # an open interval
         '..',        # number separator
-        ','          # list separator
+        ',',         # list separator
+        '', '',      # set delimiter  '{' '}'
     );
     # global defaults for object private vars
     $Type = undef;
@@ -359,60 +360,68 @@ sub is_singleton {
 }
 
 sub is_subset {
-    my $a = shift;
-    my $b;
-    if (ref ($_[0]) eq ref($a) ) { 
-        $b = shift;
+    my $a1 = shift;
+    my $b1;
+    if (ref ($_[0]) eq ref($a1) ) { 
+        $b1 = shift;
     } 
     else {
-        $b = $a->new(@_);  
+        $b1 = $a1->new(@_);  
     }
-    return $b->contains( $a );
+    return $b1->contains( $a1 );
 }
 
 sub is_proper_subset {
-    my $a = shift;
-    my $b;
-    if (ref ($_[0]) eq ref($a) ) { 
-        $b = shift;
+    my $a1 = shift;
+    my $b1;
+    if (ref ($_[0]) eq ref($a1) ) { 
+        $b1 = shift;
     } 
     else {
-        $b = $a->new(@_);  
+        $b1 = $a1->new(@_);  
     }
-    return $b->contains( $a ) && 
-           $a != $b;
+
+    my $contains = $b1->contains( $a1 );
+    return $contains unless $contains;
+     
+    my $equal = ( $a1 == $b1 );
+    return $equal if !defined $equal || $equal;
+
+    return 1;
 }
 
 sub is_disjoint {
-    return ! shift->intersects( @_ );
+    my $intersects = shift->intersects( @_ );
+    return ! $intersects if defined $intersects;
+    return $intersects;
 }
 
 sub intersects {
-    my $a = shift;
-    my ($b, $ia, $m, $n);
+    my $a1 = shift;
+    my ($b1, $ia, $m, $n);
     if (ref ($_[0]) eq ref($a) ) { 
-        $b = shift;
+        $b1 = shift;
     } 
     else {
-        $b = $a->new(@_);  
+        $b1 = $a1->new(@_);  
     }
     my $ib;
     my ($na, $nb) = (0,0);
 
-    $m = $#{$b->{list}};
-    $n = $#{$a->{list}};
+    $m = $#{$b1->{list}};
+    $n = $#{$a1->{list}};
     if ($n > 4) {
         foreach $ib ($m, $m-1, 0 .. $m - 2) {
             foreach $ia ($n, $n-1, 0 .. $n - 2) {
-                return 1 if _simple_intersects($a->{list}[$ia], $b->{list}[$ib]);
+                return 1 if _simple_intersects($a1->{list}[$ia], $b1->{list}[$ib]);
             }
         }
         return 0;
     }
 
-    foreach $ib ($nb .. $#{$b->{list}}) {
+    foreach $ib ($nb .. $#{$b1->{list}}) {
         foreach $ia ($na .. $n) {
-            return 1 if _simple_intersects($a->{list}[$ia], $b->{list}[$ib]);
+            return 1 if _simple_intersects($a1->{list}[$ia], $b1->{list}[$ib]);
         }
     }
     0;    
@@ -420,12 +429,12 @@ sub intersects {
 
 sub iterate {
     # TODO: options 'no-sort', 'no-merge', 'keep-null' ...
-    my $a = shift;
-    my $iterate = $a->empty_set();
+    my $a1 = shift;
+    my $iterate = $a1->empty_set();
     my (@tmp, $ia);
     my $subroutine = shift;
-    foreach $ia (0 .. $#{$a->{list}}) {
-        @tmp = $subroutine->( $a->new($a->{list}[$ia]), @_ );
+    foreach $ia (0 .. $#{$a1->{list}}) {
+        @tmp = $subroutine->( $a1->new($a1->{list}[$ia]), @_ );
         $iterate = $iterate->union(@tmp) if @tmp; 
     }
     return $iterate;    
@@ -510,13 +519,14 @@ sub intersection {
 sub complement {
     my $self = shift;
     if (@_) {
+        my $a1;
         if (ref ($_[0]) eq ref($self) ) {
-            $a = shift;
+            $a1 = shift;
         } 
         else {
-            $a = $self->new(@_);  
+            $a1 = $self->new(@_);  
         }
-        return $self->intersection( $a->complement );
+        return $self->intersection( $a1->complement );
     }
 
     unless ( @{$self->{list}} ) {
@@ -665,9 +675,9 @@ sub union {
 # A CONTAINS B IF B == ( A INTERSECTION B )
 #    - can backtrack = works for unbounded sets
 sub contains {
-    my $a = shift;
-    my $b1 = $a->union(@_);
-    return ($b1 == $a) ? 1 : 0;
+    my $a1 = shift;
+    my $b1 = $a1->union(@_);
+    return ($b1 == $a1) ? 1 : 0;
 }
 
 
@@ -876,7 +886,10 @@ sub real {
 
 sub as_string {
     my $self = shift;
-    return join( $self->separators(5), map { $self->_simple_as_string($_) } @{$self->{list}} );
+    return $self->separators(6) . 
+           join( $self->separators(5), 
+                 map { $self->_simple_as_string($_) } @{$self->{list}} ) .
+           $self->separators(7),;
 }
 
 
@@ -894,8 +907,8 @@ Set::Infinite::Basic - Sets of intervals
 
   use Set::Infinite::Basic;
 
-  $a = Set::Infinite::Basic->new(1,2);    # [1..2]
-  print $a->union(5,6);            # [1..2],[5..6]
+  $set = Set::Infinite::Basic->new(1,2);    # [1..2]
+  print $set->union(5,6);            # [1..2],[5..6]
 
 =head1 DESCRIPTION
 
@@ -941,42 +954,42 @@ Makes a new object from the object's data.
 
 =head2 Mode functions:    
 
-    $a->real;
+    $set = $set->real;
 
-    $a->integer;
+    $set = $set->integer;
 
 =head2 Logic functions:
 
-    $logic = $a->intersects($b);
+    $logic = $set->intersects($b);
 
-    $logic = $a->contains($b);
+    $logic = $set->contains($b);
 
-    $logic = $a->is_null;  # also called "is_empty"
+    $logic = $set->is_null;  # also called "is_empty"
 
 =head2 Set functions:
 
-    $i = $a->union($b);    
+    $set = $set->union($b);    
 
-    $i = $a->intersection($b);
+    $set = $set->intersection($b);
 
-    $i = $a->complement;
-    $i = $a->complement($b);   # can also be called "minus" or "difference"
+    $set = $set->complement;
+    $set = $set->complement($b);   # can also be called "minus" or "difference"
 
-    $i = $a->simmetric_difference( $b );
+    $set = $set->simmetric_difference( $b );
 
-    $i = $a->span;   
+    $set = $set->span;   
 
         result is (min .. max)
 
 =head2 Scalar functions:
 
-    $i = $a->min;
+    $i = $set->min;
 
-    $i = $a->max;
+    $i = $set->max;
 
-    $i = $a->size;  
+    $i = $set->size;  
 
-    $i = $a->count;  # number of spans
+    $i = $set->count;  # number of spans
 
 =head2 Overloaded Perl functions:
 
@@ -1036,21 +1049,21 @@ Makes a new object from the object's data.
 
 =head2 Internal functions:
 
-    $a->fixtype; 
+    $set->fixtype; 
 
-    $a->numeric;
+    $set->numeric;
 
 =head1 CAVEATS
 
-    $a = Set::Infinite->new(10,1);
+    $set = Set::Infinite->new(10,1);
         Will be interpreted as [1..10]
 
-    $a = Set::Infinite->new(1,2,3,4);
+    $set = Set::Infinite->new(1,2,3,4);
         Will be interpreted as [1..2],[3..4] instead of [1,2,3,4].
         You probably want ->new([1],[2],[3],[4]) instead,
         or maybe ->new(1,4) 
 
-    $a = Set::Infinite->new(1..3);
+    $set = Set::Infinite->new(1..3);
         Will be interpreted as [1..2],3 instead of [1,2,3].
         You probably want ->new(1,3) instead.
 

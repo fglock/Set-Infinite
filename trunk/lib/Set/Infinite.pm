@@ -43,7 +43,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.5601;
+    $VERSION = 0.5602;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -55,7 +55,6 @@ BEGIN {
     $max_intersection_depth = 5;  # first()
 }
 
- 
 sub trace { # title=>'aaa'
     return $_[0] unless $TRACE;
     my ($self, %parm) = @_;
@@ -1058,25 +1057,25 @@ sub _backtrack {
 
 
 sub intersects {
-    my $a = shift;
-    my $b;
-    if (ref ($_[0]) eq ref($a) ) { 
-        $b = shift;
+    my $a1 = shift;
+    my $b1;
+    if (ref ($_[0]) eq ref($a1) ) { 
+        $b1 = shift;
     } 
     else {
-        $b = $a->new(@_);  
+        $b1 = $a1->new(@_);  
     }
-    $a->trace(title=>"intersects");
-    if ($a->{too_complex}) {
-        $a = $a->_backtrack('intersection', $b);
+    $a1->trace(title=>"intersects");
+    if ($a1->{too_complex}) {
+        $a1 = $a1->_backtrack('intersection', $b1);
     }  # don't put 'else' here
-    if ($b->{too_complex}) {
-        $b = $b->_backtrack('intersection', $a);
+    if ($b1->{too_complex}) {
+        $b1 = $b1->_backtrack('intersection', $a1);
     }
-    if (($a->{too_complex}) or ($b->{too_complex})) {
+    if (($a1->{too_complex}) or ($b1->{too_complex})) {
         return undef;   # we don't know the answer!
     }
-    return $a->SUPER::intersects( $b );
+    return $a1->SUPER::intersects( $b1 );
 }
 
 
@@ -1167,15 +1166,16 @@ sub complement {
     my $self = shift;
     # do we have a parameter?
     if (@_) {
+        my $a1;
         if (ref ($_[0]) eq ref($self) ) {
-            $a = shift;
+            $a1 = shift;
         } 
         else {
-            $a = $self->new(@_);  
+            $a1 = $self->new(@_);  
         }
-        $self->trace_open(title=>"complement", arg => $a) if $TRACE;
-        $a = $a->complement;
-        my $tmp =$self->intersection($a);
+        $self->trace_open(title=>"complement", arg => $a1) if $TRACE;
+        $a1 = $a1->complement;
+        my $tmp =$self->intersection($a1);
         $self->trace_close( arg => $tmp ) if $TRACE;
         return $tmp;
     }
@@ -1230,26 +1230,26 @@ sub union {
 # A CONTAINS B IF B == ( A INTERSECTION B )
 #    - can backtrack = works for unbounded sets
 sub contains {
-    my $a = shift;
-    $a->trace_open(title=>"contains") if $TRACE;
-    if ( $a->{too_complex} ) { 
+    my $a1 = shift;
+    $a1->trace_open(title=>"contains") if $TRACE;
+    if ( $a1->{too_complex} ) { 
         # we use intersection because it is better for backtracking
-        my $b = (ref $_[0] eq ref $a) ? $_[0] : $a->new(@_);
-        my $b1 = $a->intersection($b);
+        my $b0 = (ref $_[0] eq ref $a1) ? $_[0] : $a1->new(@_);
+        my $b1 = $a1->intersection($b0);
         if ( $b1->{too_complex} ) {
             $b1->trace_close( arg => 'undef' ) if $TRACE;
             return undef;
         }
-        $a->trace_close( arg => ($b1 == $b ? 1 : 0) ) if $TRACE;
-        return ($b1 == $b) ? 1 : 0;
+        $a1->trace_close( arg => ($b1 == $b0 ? 1 : 0) ) if $TRACE;
+        return ($b1 == $b0) ? 1 : 0;
     }
-    my $b1 = $a->union(@_);
+    my $b1 = $a1->union(@_);
     if ( $b1->{too_complex} ) {
         $b1->trace_close( arg => 'undef' ) if $TRACE;
         return undef;
     }
-    $a->trace_close( arg => ($b1 == $a ? 1 : 0) ) if $TRACE;
-    return ($b1 == $a) ? 1 : 0;
+    $a1->trace_close( arg => ($b1 == $a1 ? 1 : 0) ) if $TRACE;
+    return ($b1 == $a1) ? 1 : 0;
 }
 
 
@@ -1380,8 +1380,8 @@ Set::Infinite - Sets of intervals
 
   use Set::Infinite;
 
-  $a = Set::Infinite->new(1,2);    # [1..2]
-  print $a->union(5,6);            # [1..2],[5..6]
+  $set = Set::Infinite->new(1,2);    # [1..2]
+  print $set->union(5,6);            # [1..2],[5..6]
 
 
 =head1 DESCRIPTION
@@ -1501,7 +1501,7 @@ the "type" and "density" characteristics.
 
 =head2 union
 
-    $set = $a->union($b);
+    $set = $set->union($b);
 
 Returns the set of all elements from both sets.
 
@@ -1514,7 +1514,7 @@ This function behaves like an "OR" operation.
 
 =head2 intersection
 
-    $set = $a->intersection($b);
+    $set = $set->intersection($b);
 
 Returns the set of elements common to both sets.
 
@@ -1531,7 +1531,7 @@ This function behaves like an "AND" operation.
 
 =head2 difference
 
-    $set = $a->complement;
+    $set = $set->complement;
 
 Returns the set of all elements that don't belong to the set.
 
@@ -1541,7 +1541,7 @@ Returns the set of all elements that don't belong to the set.
 
 The complement function might take a parameter:
 
-    $set = $a->minus($b);
+    $set = $set->minus($b);
 
 Returns the set-difference, that is, the elements that don't
 belong to the given set.
@@ -1560,13 +1560,13 @@ but not in both. This is the "set" version of "XOR".
 
 =head2 real
 
-    $set1 = $a->real;
+    $set1 = $set->real;
 
 Returns a set with density "0".
 
 =head2 integer
 
-    $set1 = $a->integer;
+    $set1 = $set->integer;
 
 Returns a set with density "1".
 
@@ -1574,17 +1574,17 @@ Returns a set with density "1".
 
 =head2 intersects
 
-    $logic = $a->intersects($b);
+    $logic = $set->intersects($b);
 
 =head2 contains
 
-    $logic = $a->contains($b);
+    $logic = $set->contains($b);
 
 =head2 is_empty
 
 =head2 is_null
 
-    $logic = $a->is_null;
+    $logic = $set->is_null;
 
 =head2 is_nonempty 
 
@@ -1625,19 +1625,19 @@ See also: C<count> method.
 
 =head2 min
 
-    $i = $a->min;
+    $i = $set->min;
 
 =head2 max
 
-    $i = $a->max;
+    $i = $set->max;
 
 =head2 size
 
-    $i = $a->size;  
+    $i = $set->size;  
 
 =head2 count
 
-    $i = $a->count;
+    $i = $set->count;
 
 =head1 OVERLOADED OPERATORS
 
@@ -1686,7 +1686,7 @@ Default is none (a normal Perl SCALAR).
 
 =head2 span
 
-    $set1 = $a->span;
+    $set1 = $set->span;
 
 Returns the set span.
 
@@ -1746,8 +1746,8 @@ See diagram below:
 
         Example: 
 
-            $a = Set::Infinite->new([1,3]);
-            print join (" ", $a->quantize( quant => 1 ) );
+            $set = Set::Infinite->new([1,3]);
+            print join (" ", $set->quantize( quant => 1 ) );
 
         Gives: 
 
@@ -1813,7 +1813,7 @@ default is none (a normal perl SCALAR).
 
 =head2 _cleanup
 
-    $a->_cleanup;
+    $set->_cleanup;
 
 Internal function to fix the internal set representation.
 This is used after operations that might return invalid
@@ -1821,13 +1821,13 @@ values.
 
 =head2 _backtrack
 
-    $a->_backtrack( 'intersection', $b );
+    $set->_backtrack( 'intersection', $b );
 
 Internal function to evaluate recurrences.
 
 =head2 numeric
 
-    $a->numeric;
+    $set->numeric;
 
 Internal function to ignore the set "type".
 It is used in some internal optimizations, when it is
@@ -1835,15 +1835,15 @@ possible to use scalar values instead of objects.
 
 =head2 fixtype
 
-    $a->fixtype;
+    $set->fixtype;
 
 Internal function to fix the result of operations
 that use the numeric() function.
 
 =head2 tolerance
 
-    $a->tolerance(0)    # defaults to real sets (default)
-    $a->tolerance(1)    # defaults to integer sets
+    $set = $set->tolerance(0)    # defaults to real sets (default)
+    $set = $set->tolerance(1)    # defaults to integer sets
 
 Internal function for changing the set "density".
 
@@ -1878,13 +1878,13 @@ Comparison of unbounded recurrences is not implemented.
 
 =item * constructor "span" notation
 
-    $a = Set::Infinite->new(10,1);
+    $set = Set::Infinite->new(10,1);
 
 Will be interpreted as [1..10]
 
 =item * constructor "multiple-span" notation
 
-    $a = Set::Infinite->new(1,2,3,4);
+    $set = Set::Infinite->new(1,2,3,4);
 
 Will be interpreted as [1..2],[3..4] instead of [1,2,3,4].
 You probably want ->new([1],[2],[3],[4]) instead,
@@ -1892,7 +1892,7 @@ or maybe ->new(1,4)
 
 =item * "range operator"
 
-    $a = Set::Infinite->new(1..3);
+    $set = Set::Infinite->new(1..3);
 
 Will be interpreted as [1..2],3 instead of [1,2,3].
 You probably want ->new(1,3) instead.

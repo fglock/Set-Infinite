@@ -1,5 +1,9 @@
 Revision history for Perl extension Set::Infinite.
 
+- added "separators" test in t/infinite.t
+- is_proper_subset / is_disjoint may return 'undef'
+- variables $a, $b renamed
+
 0.5601  2004-03-20
 - iterate() first/last can deal with multiple spans
 - removed todo: "provide a constructor to build open sets"
