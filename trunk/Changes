@@ -1,5 +1,10 @@
 Revision history for Perl extension Set::Infinite.
 
+- New methods:
+  empty_set
+  minus / difference (same as "complement")
+  simmetric_difference
+
 0.56  2004-03-17
 - New method: clone (same as "copy")
 - More tests & fixes: intersected_spans

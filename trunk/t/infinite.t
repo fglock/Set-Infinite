@@ -13,7 +13,7 @@ my $neg_inf = -$inf;
 my $errors = 0;
 my $test = 0;
 
-print "1..77\n";
+print "1..80\n";
 
 sub test {
 	my ($header, $sub, $expected) = @_;
@@ -62,6 +62,10 @@ $a = Set::Infinite->new(16, 17);
 # print " a is ", $a, "\n";
 test ("$a union (10..13)  ", '$a->union(10, 13)', "[10..13],[16..17]"); # 5
 
+# simmetric_difference
+test ("$a simmetric_difference (10..16.5)  ", '$a->simmetric_difference(10, 16.5)', "[10..16),(16.5..17]"); # 5.5
+
+
 # print "Operations on open sets\n";
 $a = Set::Infinite->new(1,$inf);
 test ("set : ", 	'$a', "[1..$inf)"); # 6
@@ -81,6 +85,10 @@ test ("union $b : ", 	'$c', "($neg_inf..1),(1..$inf)"); # 14
 test ("  complement : ", 	'$c->complement',"1"); # 15
 test ("union $c [1..inf) ", 	'$c->union(1,$inf)', "($neg_inf..$inf)"); # 16
 test ("union $b [1..inf) ", 	'$b->union(1,$inf)', "[1..$inf)"); # 17
+
+# alternate names for "complement"
+test ("  minus: ",        '$c->minus()',"1"); # 18
+test ("  difference: ",        '$c->difference()',"1"); # 19
 
 # print "Testing 'null' and (0..0)\n";
 

@@ -104,7 +104,7 @@ sub trace_close {
 # creates a 'function' object that can be solved by _backtrack()
 sub _function {
     my ($self, $method) = (shift, shift);
-    my $b = $self->new();
+    my $b = $self->empty_set();
     $b->{too_complex} = 1;
     $b->{parent} = $self;   
     $b->{method} = $method;
@@ -119,7 +119,7 @@ sub _function2 {
     unless ( $self->{too_complex} || $arg->{too_complex} ) {
         return $self->$method($arg, @_);
     }
-    my $b = $self->new();
+    my $b = $self->empty_set();
     $b->{too_complex} = 1;
     $b->{parent} = [ $self, $arg ];
     $b->{method} = $method;
@@ -142,7 +142,7 @@ sub quantize {
 
     my @a;
     my %rule = @_;
-    my $b = $self->new();    
+    my $b = $self->empty_set();    
     my $parent = $self;
 
     $rule{unit} =   'one' unless $rule{unit};
@@ -236,7 +236,7 @@ sub select {
 
     if ($count <= 0) {
         $self->trace_close( arg => $res ) if $TRACE;
-        return $self->new();
+        return $self->empty_set();
     }
 
     my @set;
@@ -290,7 +290,7 @@ sub select {
     }
 
     return $res if $count == $inf;
-    my $count_set = $self->new();
+    my $count_set = $self->empty_set();
     $count_set->{cant_cleanup} = 1;
     if ( ! $self->is_too_complex )
     {
@@ -494,7 +494,7 @@ BEGIN {
             my ($first, $tail);
             if ( $first2[0] <= $first1[0] ) {
                 # added ->first because it returns 2 spans if $a1 == $a2
-                $first = $a1->new()->until( $first2[0] )->first;
+                $first = $a1->empty_set()->until( $first2[0] )->first;
                 $tail = $a1->_function2( "until", $first2[1] );
             }
             else {
@@ -820,7 +820,7 @@ sub offset {
 
     my @a;
     my %param = @_;
-    my $b1 = $self->new();    
+    my $b1 = $self->empty_set();    
     my ($interval, $ia, $i);
     $param{mode} = 'offset' unless $param{mode};
 
@@ -1467,6 +1467,13 @@ This is the recommended way to do it:
 
 Creates a new object, and copy the object data.
 
+=head2 empty_set
+
+Creates an empty set.
+
+If called from an existing set, the empty set inherits
+the "type" and "density" characteristics.
+
 =head1 SET FUNCTIONS
 
 =head2 union
@@ -1497,6 +1504,10 @@ This function behaves like a "and" operation.
 
 =head2 complement
 
+=head2 minus
+
+=head2 difference
+
     $set = $a->complement;
 
 Returns the set of all elements that don't belong to the set.
@@ -1517,6 +1528,10 @@ belong to the given set.
     print $set1->complement( $set2 );
     # output: [1..4]
 
+=head2 simmetric_difference
+
+Returns a set containing elements that are in either set,
+but not in both. This is the "set" version of "XOR".
 
 =head1 DENSITY FUNCTIONS    
 

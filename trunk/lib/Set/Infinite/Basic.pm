@@ -358,7 +358,7 @@ sub intersects {
 sub iterate {
     # TODO: options 'no-sort', 'no-merge', 'keep-null' ...
     my $a = shift;
-    my $iterate = $a->new();
+    my $iterate = $a->empty_set();
     my ($tmp, $ia);
     my $subroutine = shift;
     foreach $ia (0 .. $#{$a->{list}}) {
@@ -379,7 +379,7 @@ sub intersection {
     }
     my ($ia, $ib);
     my ($ma, $mb) = ($#{$a1->{list}}, $#{$b1->{list}});
-    my $intersection = $a1->new();
+    my $intersection = $a1->empty_set();
     # for-loop optimization (makes little difference)
     if ($ma < $mb) { 
         ($ma, $mb) = ($mb, $ma);
@@ -459,10 +459,10 @@ sub complement {
     unless ( @{$self->{list}} ) {
         return $self->new($neg_inf, $inf);
     }
-    my $complement = $self->new();
+    my $complement = $self->empty_set();
     @{$complement->{list}} = _simple_complement($self->{list}[0]); 
 
-    my $tmp = $self->new();
+    my $tmp = $self->empty_set();
     foreach my $ia (1 .. $#{$self->{list}}) {
         @{$tmp->{list}} = _simple_complement($self->{list}[$ia]); 
         $complement = $complement->intersection($tmp); 
@@ -610,7 +610,7 @@ sub contains {
 
 sub copy {
     my $self = shift;
-    my $copy = $self->new();
+    my $copy = $self->empty_set();
     ## return $copy unless ref($self);   # constructor!
     foreach my $key (keys %{$self}) {
         if ( ref( $self->{$key} ) eq 'ARRAY' ) {
@@ -674,6 +674,32 @@ sub new {
         push @{ $self->{list} }, _simple_new($tmp,$tmp2, $self->{type} )
     }
     $self;
+}
+
+sub empty_set {
+    $_[0]->new;
+}
+
+sub minus {
+    shift->complement( @_ );
+}
+
+sub difference {
+    shift->complement( @_ );
+}
+
+sub simmetric_difference {
+    my $a1 = shift;
+    my $b1;
+    if (ref ($_[0]) eq ref($a1) ) {
+        $b1 = shift;
+    }
+    else {
+        $b1 = $a1->new(@_);
+    }
+
+    return $a1->complement( $b1 )->union(
+           $b1->complement( $a1 ) );
 }
 
 sub min { 
@@ -818,6 +844,13 @@ This module does not support recurrences. Recurrences are implemented in Set::In
 
 =head1 METHODS
 
+=head2 empty_set
+
+Creates an empty_set.
+
+If called from an existing set, the empty set inherits
+the "type" and "density" characteristics.
+
 =head2 until
 
 Extends a set until another:
@@ -857,7 +890,9 @@ Makes a new object from the object's data.
     $i = $a->intersection($b);
 
     $i = $a->complement;
-    $i = $a->complement($b);
+    $i = $a->complement($b);   # can also be called "minus" or "difference"
+
+    $i = $a->simmetric_difference( $b );
 
     $i = $a->span;   
 
