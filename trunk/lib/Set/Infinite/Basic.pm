@@ -793,8 +793,10 @@ sub size {
         else {
             $size = $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
         }
-        $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
-        $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
+        if ( $self->{tolerance} ) {
+            $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
+            $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
+        }
      }
     return $size; 
 };
