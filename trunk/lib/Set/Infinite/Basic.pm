@@ -340,6 +340,12 @@ sub numeric {
     return $self;
 }
 
+sub _no_cleanup {
+    my ($self) = shift;
+    $self->{cant_cleanup} = 1;
+    return $self;
+}
+
 sub first {
     my $self = shift;
     if (exists $self->{first} ) {
@@ -350,7 +356,7 @@ sub first {
     }
     my $first = $self->new( @{$self->{list}} [0] );
     return $first unless wantarray;
-    my $res = $self->new->no_cleanup;
+    my $res = $self->new->_no_cleanup;
     push @{$res->{list}}, @{$self->{list}} [1 .. $#{$self->{list}}];
     return @{$self->{first}} = ($first) if $res->is_null;
     return @{$self->{first}} = ($first, $res);
@@ -366,7 +372,7 @@ sub last {
     }
     my $last = $self->new( @{$self->{list}} [-1] );
     return $last unless wantarray;  
-    my $res = $self->new->no_cleanup;
+    my $res = $self->new->_no_cleanup;
     push @{$res->{list}}, @{$self->{list}} [0 .. $#{$self->{list}}-1];
     return @{$self->{last}} = ($last) if $res->is_null;
     return @{$self->{last}} = ($last, $res);

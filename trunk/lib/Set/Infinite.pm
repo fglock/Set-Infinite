@@ -360,7 +360,7 @@ sub select {
                 # my @first = $self->first;
                 # warn "select-first = $first[0]";
 
-                my $result = $self->new()->no_cleanup;
+                my $result = $self->new()->_no_cleanup;
                 my $tail = $self;
                 # my $index = 0;
                 my @first;
@@ -858,16 +858,13 @@ my %_last = (
 
 sub first {
     my $self = shift;
-    # my $n;
     if (exists $self->{first} ) {
         # from cache
-        $self->trace(title=>"> first - cache ". ( defined ${$self->{first}}[0] ? "@{$self->{first}}" : "undef 0" ) ) if $TRACE;
         return wantarray ? @{$self->{first}} : $self->{first}[0];
     }
     $self->trace_open(title=>"first") if $TRACE;
 
     if ( $self->{too_complex} ) {
-        # my @parent = $self->min_a;
         my $method = $self->{method};
         return $_first{$method}->($self) if exists $_first{$method};
 
@@ -886,7 +883,6 @@ sub last {
     my $self = shift;
     if (exists $self->{last} ) {
         # from cache
-        $self->trace(title=>"> last - cache ". ( defined ${$self->{last}}[0] ? "@{$self->{last}}" : "undef 0" ) ) if $TRACE;
         return wantarray ? @{$self->{last}} : $self->{last}[0];
     }
     $self->trace(title=>"last") if $TRACE;
@@ -896,11 +892,7 @@ sub last {
         return $_last{$method}->($self) if exists $_last{$method};
 
         $self->trace( title=> "redo" ) if $TRACE;
-        # warn "redo $method";
         my $redo = $self->{parent}->$method( @{ $self->{param} } );
-        # my $new_method = exists $redo->{method} ? $redo->{method} : "[none]";
-        # $redo->trace( title=> "redo" );
-        # now we've got a ".$new_method;
 
         # TODO: check for deep recursion!
         my @last = $redo->last;
@@ -920,7 +912,6 @@ sub offset {
     if ($self->{too_complex}) {
         my $b1 = $self->_function( 'offset', @_ );
         # first() code
-        ## $self->trace( title => "*** offset doesn't have a first! ***" );
         my ($first, $tail) = $self->first;
         # TODO: check for invalid $first, $tail
         $first = $first->offset( @_ );
@@ -958,7 +949,6 @@ sub offset {
                 $ia = $interval->{a};
                 push @a, { a => $ia , b => $ia,
                         open_begin => 0 , open_end => 0 };
-                        # open_begin => $open_begin , open_end => $open_end };
             }
             $b1->{list} = \@a;        # change data
             $b1->{cant_cleanup} = 1;
@@ -981,8 +971,6 @@ sub offset {
 
     carp "unknown unit $param{unit} for offset()" unless defined $sub_unit;
     carp "unknown mode $param{mode} for offset()" unless defined $sub_mode;
-
-    # print " [ofs:$param{mode} $param{unit} value:", join (",", @{$param{value} }),"]\n";
 
     my ($j);
     my ($cmp, $this, $next, $ib, $part, $open_begin, $open_end, $tmp);
@@ -1096,23 +1084,18 @@ sub _quantize_span {
 }
 
 sub _backtrack {
-    #
-    #  NOTE: set/reset $DEBUG_BT to enable debugging
-    #
     my ($self, $method, $arg) = @_;
+
     unless ( $self->{too_complex} ) {
-        $self->trace_open( title => 'backtrack '.$method ) if $TRACE;
-        my $tmp = $self->$method ($arg);
-        $self->trace_close( arg => $tmp ) if $TRACE;
-        return $tmp;
+        return $self->$method ($arg);
     }
+
     $self->trace_open( title => 'backtrack '.$self->{method} ) if $TRACE;
 
     $backtrack_depth++;
     if ($backtrack_depth > $max_backtrack_depth) {
         carp (__PACKAGE__ . ": Backtrack too deep (more than " . $max_backtrack_depth . " levels)");
     }
-    # print " [BT:depth=",$backtrack_depth,"] \n";
     print " [BT$backtrack_depth-0:",join(";",@_),"] \n" if $DEBUG_BT;
     my $result;
     print " [bt$backtrack_depth-0-1:self=",join(";",%{$self}),"] \n" if $DEBUG_BT;
@@ -1150,7 +1133,6 @@ sub _backtrack {
         }
 
         # apply {method}
-
         my $method = $self->{method};
         $result = $result1->$method ($result2);
 
@@ -1159,11 +1141,8 @@ sub _backtrack {
         return $result;
     }  # parent is ARRAY
 
-
     # has 1 parent and parameters (offset, select, quantize)
     # data structure: {method} - method name, {param} - array, param list
-
-    # TODO: backtrack on complement()
 
     print " [bt$backtrack_depth-3-05: 1-PARENT ] \n" if $DEBUG_BT;
     my $result1 = $self->{parent};
@@ -1191,25 +1170,16 @@ sub _backtrack {
     elsif ($my_method eq 'offset') {
                 # (TODO) ????
                 my %tmp = @param;
-
-                #    unless (ref($tmp{value}) eq 'ARRAY') {
-                #        $tmp{value} = [0 + $tmp{value}, 0 + $tmp{value}];
-                #    }
-                #    # $tmp{value}[0] = - $tmp{value}[0]; -- don't do this!
-                #    # $tmp{value}[1] = - $tmp{value}[1]; -- don't do this!
-
                 my @values = sort @{$tmp{value}};
 
                 $backtrack_arg2 = $arg->offset( unit => $tmp{unit}, mode => $tmp{mode}, value => [- $values[-1], - $values[0]] );
 
-                $backtrack_arg2 = $arg->union( $backtrack_arg2 );   # another hack - fixes some problems with 'begin' mode
-
+                $backtrack_arg2 = $arg->union( $backtrack_arg2 );   # fixes some problems with 'begin' mode
     }
     # select - check "by" behaviour
-    else {    # if ($my_method eq 'select') {
+    else {  
                 # (TODO) ????
                 # see: 'BIG, negative select' in backtrack.t
-
                 $backtrack_arg2 = $arg;
     }
 
@@ -1298,11 +1268,9 @@ sub intersection {
         }
     }
     if ($a1->{too_complex}) {
-        # added: unless $b1->{too_complex}
         $a1 = $a1->_backtrack('intersection', $b1) unless $b1->{too_complex};
     }  # don't put 'else' here
     if ($b1->{too_complex}) {
-        # added: unless $b1->{too_complex}
         $b1 = $b1->_backtrack('intersection', $a1) unless $a1->{too_complex};
     }
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
@@ -1540,16 +1508,13 @@ sub min_a {
                 $self->trace_close( arg => "undef 0" ) if $TRACE;
                 return @{$self->{min}} = (undef, 0);
             }
-            # warn "first is $first[0]";
             my @min = $first[0]->min;
             $self->trace_close( arg => "@min" ) if $TRACE;
             return @{$self->{min}} = @min;
 
         }
     }
-
-    $self->trace( title=> 'min simple tolerance='. $self->{tolerance}  ) if $TRACE;
-    $self->trace_close( arg => 'undef 0' ) if $TRACE;
+    $self->trace_close( arg => 'SUPER' ) if $TRACE;
     return $self->SUPER::min_a;
 };
 
@@ -1612,7 +1577,7 @@ sub max_a {
             return @{$self->{max}} ;
         }
     }
-    $self->trace_close( arg => "undef 0" ) if $TRACE;
+    $self->trace_close( arg => "SUPER" ) if $TRACE;
     return $self->SUPER::max_a;
 };
 
@@ -1644,11 +1609,6 @@ sub spaceship {
     return $tmp1->SUPER::spaceship( $tmp2, $inverted );
 }
 
-sub no_cleanup {
-    my ($self) = shift;
-    $self->{cant_cleanup} = 1; 
-    return $self;
-}
 
 sub _cleanup {
     my ($self) = shift;

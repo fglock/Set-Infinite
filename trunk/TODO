@@ -1,5 +1,9 @@
 Set::Infinite TODO 
 
+    - fix unbalanced trace_open/close 
+
+    - move _cleanup to S::I::Basic
+
     - refactor "widgets" out of the main code. Maybe create
       a Set::Infinite::Widgets directory.
 
@@ -9,7 +13,7 @@ Set::Infinite TODO
 
     - tests for iterate min/max/first
 
-    - refactor backtracking, min, max, first, offset, quantize
+    - refactor backtracking, offset, quantize
 
     - tests for min/max of iterate()
 

@@ -1,11 +1,13 @@
 Revision history for Perl extension Set::Infinite.
 
+    refactored methods: min, max, first, last, until, iterate
+
 0.53    2003-09-05
-    - fixes a test that fails under 5.00503
-    - does not export 'new'
+    fixes a test that fails under 5.00503
+    does not export 'new'
 
 0.52    2003-09-04
-    change tests to run under Perl 5.9.0
+    change tests to run under (a broken) Perl 5.9.0
     - infinity string contains spaces
 
 0.51    2003-09-02
