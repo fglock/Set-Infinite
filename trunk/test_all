@@ -37,6 +37,8 @@ for my $test ( @tests )
 
     # TODO: did it pass?
 
+    print "  installing\n";
+    print `make install`;
 }
 chdir $current_dir;
 
