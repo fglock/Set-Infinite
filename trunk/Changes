@@ -1,5 +1,8 @@
 Revision history for Perl extension Set::Infinite.
 
+0.57    2004-04-03
+- CPAN update
+
 0.5602  2004-03-25
 - fixed a test in t/select.t -  Reported by David Dyck.
 - simplified "offset"; fixed "fixtype"
