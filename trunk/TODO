@@ -20,6 +20,7 @@ Set::Infinite TODO
     - change "link to self" to "link to copy" in first()
 
     - finish last()
+      until, select
 
     - finish select/first defined "boundedness" for negative by
       and tests for negative by

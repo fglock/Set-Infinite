@@ -652,7 +652,40 @@ my %_first = (
             my $redo = $parent[0]->until( $parent[1] );
             my @first = $redo->first;
             return wantarray ? @first : $first[0];
-        }
+        },
+    'iterate' =>
+        sub {
+            my $self = shift;
+            my $parent = $self->{parent};
+            my @first = $parent->first;
+            $first[0] = $first[0]->iterate( @{$self->{param}} ) if ref($first[0]);
+            $first[1] = $first[1]->_function( 'iterate', @{$self->{param}} ) if ref($first[1]);
+            return @{$self->{first}} = @first;
+        },
+    'until' =>
+        sub {
+            my $self = shift;
+            my ($a1, $b1) = @{ $self->{parent} };
+            $a1->trace( title=>"computing first()" );
+            my @first1 = $a1->first;
+            my @first2 = $b1->first;
+            my ($first, $tail);
+            if ( $first2[0] <= $first1[0] ) {
+                # added ->first because it returns 2 spans if $a1 == $a2
+                $first = $a1->new()->until( $first2[0] )->first;
+                $tail = $a1->_function2( "until", $first2[1] );
+            }
+            else {
+                $first = $a1->new( $first1[0] )->until( $first2[0] );
+                if ( defined $first1[1] ) {
+                    $tail = $first1[1]->_function2( "until", $first2[1] );
+                }
+                else {
+                    $tail = undef;
+                }
+            }
+            return @{$self->{first}} = ($first, $tail);
+        },
 );  # %_first
 
 my %_last = (
@@ -814,6 +847,15 @@ my %_last = (
                 $tail = $parent1->$method( $parent2 );
             }
             return @{$self->{first}} = ($last, $tail);
+        },
+    'iterate' =>
+        sub {
+            my $self = shift;
+            my $parent = $self->{parent};
+            my @last = $parent->last;
+            $last[0] = $last[0]->iterate( @{$self->{param}} ) if ref($last[0]);
+            $last[1] = $last[1]->_function( 'iterate', @{$self->{param}} ) if ref($last[1]);
+            return @{$self->{last}} = @last;
         },
 );  # %_last
 
@@ -1235,31 +1277,13 @@ sub intersects {
 }
 
 sub iterate {
-    my $a = shift;
-    if ($a->{too_complex}) {
-        $a->trace(title=>"iterate:backtrack");
-        my $return = $a->_function( 'iterate', @_ );
-
-        # first() helper
-        my @first = $a->first;
-        # warn "iterate: FIRST of $a was @first";
-        $first[0] = $first[0]->iterate( @_ ) if ref($first[0]);
-        $first[1] = $first[1]->_function( 'iterate', @_ ) if ref($first[1]);
-        # warn "iterate: FIRST got @first";
-        $return->{first} = \@first;
-
-        # last() helper
-        my @last = $a->last;
-        # warn "iterate: LAST of $a was @last";
-        $last[0] = $last[0]->iterate( @_ ) if ref($last[0]);
-        $last[1] = $last[1]->_function( 'iterate', @_ ) if ref($last[1]);
-        # warn "iterate: LAST got @last";
-        $return->{last} = \@last;
-
-        return $return;
+    my $self = shift;
+    if ($self->{too_complex}) {
+        $self->trace(title=>"iterate:backtrack") if $TRACE;
+        return $self->_function( 'iterate', @_ );
     }
-    $a->trace(title=>"iterate");
-    return $a->SUPER::iterate( @_ );
+    $self->trace(title=>"iterate") if $TRACE;
+    return $self->SUPER::iterate( @_ );
 }
 
 sub intersection {
@@ -1330,34 +1354,8 @@ sub until {
     else {
         $b1 = $a1->new(@_);  
     }
-    $a1->trace_open(title=>"until", arg => $b1) if $TRACE;
-    # warn "until: $a1 n=". $#{ $a1->{list} } ." $b1 n=". $#{ $b1->{list} } ;
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
-        my $u = $a1->_function2( 'until', $b1 );
-        # first() code
-
-        $a1->trace( title=>"computing first()" );
-        my @first1 = $a1->first;
-        my @first2 = $b1->first;
-        my ($first, $tail);
-        if ( $first2[0] <= $first1[0] ) {
-            # added ->first because it returns 2 spans if $a1 == $a2
-            $first = $a1->new()->until( $first2[0] )->first;
-            $tail = $a1->_function2( "until", $first2[1] );
-        }
-        else {
-            $first = $a1->new( $first1[0] )->until( $first2[0] );
-            if ( defined $first1[1] ) {
-                $tail = $first1[1]->_function2( "until", $first2[1] );
-            }
-            else {
-                $tail = undef;
-            }
-        }
-        $u->{first} = [ $first, $tail ];
-        $a1->trace_close( arg => $u ) if $TRACE;
-
-        return $u;
+        return $a1->_function2( 'until', $b1 );
     }
     return $a1->SUPER::until( $b1 );
 }
