@@ -15,6 +15,7 @@ my @tests = qw(
 );
 
 my $current_dir;
+my $perl = shift || 'perl';
 
 for my $test ( @tests )
 {
@@ -30,7 +31,7 @@ for my $test ( @tests )
     chdir $dir;
 
     print "  processing Makefile.PL\n";
-    print `perl Makefile.PL`;
+    print `$perl Makefile.PL`;
 
     print "  testing\n";
     print `make test`;
@@ -43,6 +44,7 @@ for my $test ( @tests )
 chdir $current_dir;
 
 # report
+print "Tested with $perl\n";
 for my $test ( @tests ) 
 {
     print "Tested: $test\n";
