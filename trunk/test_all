@@ -11,6 +11,7 @@ my @tests = qw(
     DateTime::Set
     DateTime::Event::Recurrence
     DateTime::Event::ICal
+    DateTime::Format::ICal
 );
 
 my $current_dir;
