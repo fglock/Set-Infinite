@@ -1,10 +1,5 @@
 Set::Infinite TODO 
 
-    - bug fix needed:
-
-      $set = Set::Infinite->new( -10, 0 );
-      creates a set with "-10" instead of [-10,0]
-
     - parser
 
     - _quantize_span should only be used inside backtrack()

@@ -1,5 +1,5 @@
 #/bin/perl
-# Copyright (c) 2001 Flavio Soibelmann Glock. All rights reserved.
+# Copyright (c) 2003 Flavio Soibelmann Glock. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -13,7 +13,7 @@ my $neg_inf = -$inf;
 my $errors = 0;
 my $test = 0;
 
-print "1..76\n";
+print "1..77\n";
 
 sub test {
 	my ($header, $sub, $expected) = @_;
@@ -221,6 +221,11 @@ test ("span of $b is : ", '$b->span', "[1.1..5.1]");
 
 # tie $a, 'Set::Infinite', [1,2], [9,10];
 # test ("tied: ",'$a',"[1..2],[9..10]");
+
+
+$a = Set::Infinite->new( -1,0);
+test ("new  ", '$a', "[-1..0]"); 
+
 
 stats;
 1;

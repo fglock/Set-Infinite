@@ -1,6 +1,6 @@
 package Set::Infinite::Basic;
 
-# Copyright (c) 2001, 2002 Flavio Soibelmann Glock. All rights reserved.
+# Copyright (c) 2001, 2002, 2003 Flavio Soibelmann Glock. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
@@ -650,7 +650,12 @@ sub new {
                 next;
             }
         }
-        $tmp2 = shift || $tmp;
+        if ( @_ ) { 
+            $tmp2 = shift
+        }
+        else {
+            $tmp2 = $tmp
+        }
         push @{ $self->{list} }, _simple_new($tmp,$tmp2, $self->{type} )
     }
     $self;
