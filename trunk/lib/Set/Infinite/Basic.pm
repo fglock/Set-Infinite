@@ -6,24 +6,22 @@ package Set::Infinite::Basic;
 
 require 5.005_03;
 use strict;
-# use warnings;
 
 require Exporter;
 use Carp;
 use Data::Dumper; 
 use vars qw( @ISA @EXPORT_OK @EXPORT );
-# use vars qw( $VERSION );
-use vars qw( $Type $tolerance $fixtype $inf $minus_inf @separators $neg_inf );
+use vars qw( $Type $tolerance $fixtype $inf $minus_inf @Separators $neg_inf );
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( INFINITY NEG_INFINITY );
 @EXPORT = qw();
-# $VERSION = $Set::Infinite::VERSION;
 
-$inf       = 100**100**100;
-$minus_inf = $neg_inf = -$inf;
-use constant INFINITY => $inf;
-use constant NEG_INFINITY => $minus_inf;
+use constant INFINITY => 100**100**100;
+use constant NEG_INFINITY => - INFINITY;
+
+$inf       = INFINITY;
+$minus_inf = $neg_inf = NEG_INFINITY;
 
 use overload
     '<=>' => \&spaceship,
@@ -34,13 +32,14 @@ use overload
 # TODO: make this an object _and_ class method
 # TODO: POD
 sub separators {
-    return $separators[ $_[1] ] if $#_ == 1;
-    @separators = @_ if @_;
-    return @separators;
+    shift;
+    return $Separators[ $_[0] ] if $#_ == 0;
+    @Separators = @_ if @_;
+    return @Separators;
 }
 
 BEGIN {
-    separators (
+    __PACKAGE__->separators (
         '[', ']',    # a closed interval
         '(', ')',    # an open interval
         '..',        # number separator
@@ -95,13 +94,28 @@ sub _simple_intersects {
 sub _simple_complement {
     my $self = $_[0];
     if ($self->{b} == $inf) {
-        return { a => $neg_inf, b => $self->{a}, open_begin => 1, open_end => ! $self->{open_begin} };
+        return { a => $neg_inf, 
+                 b => $self->{a}, 
+                 open_begin => 1, 
+                 open_end => ! $self->{open_begin} };
     }
-    elsif ($self->{a} == $neg_inf) {
-        return { a => $self->{b}, b => $inf,  open_begin => ! $self->{open_end}, open_end => 1 };
+    if ($self->{a} == $neg_inf) {
+        return { a => $self->{b}, 
+                 b => $inf,  
+                 open_begin => ! $self->{open_end}, 
+                 open_end => 1 };
     }
-    ( { a => $neg_inf, b => $self->{a}, open_begin => 1, open_end => ! $self->{open_begin} },
-      { a => $self->{b}, b => $inf,  open_begin => ! $self->{open_end}, open_end => 1 } );
+    ( { a => $neg_inf, 
+        b => $self->{a}, 
+        open_begin => 1, 
+        open_end => ! $self->{open_begin} 
+      },
+      { a => $self->{b}, 
+        b => $inf,  
+        open_begin => ! $self->{open_end}, 
+        open_end => 1 
+      }
+    );
 }
 
 sub _simple_union {
@@ -212,6 +226,7 @@ sub _simple_new {
 
 
 sub _simple_as_string {
+    my $set = shift;
     my $self = $_[0];
     my $s;
     return "" unless defined $self;
@@ -224,9 +239,9 @@ sub _simple_as_string {
     $tmp2 = $tmp2->datetime if UNIVERSAL::can( $tmp2, 'datetime' );
     $tmp2 = "$tmp2";
     return $tmp1 if $tmp1 eq $tmp2;
-    $s = $self->{open_begin} ? $separators[2] : $separators[0];
-    $s .= $tmp1 . $separators[4] . $tmp2;
-    $s .= $self->{open_end} ? $separators[3] : $separators[1];
+    $s = $self->{open_begin} ? $set->separators(2) : $set->separators(0);
+    $s .= $tmp1 . $set->separators(4) . $tmp2;
+    $s .= $self->{open_end} ? $set->separators(3) : $set->separators(1);
     return $s;
 }
 
@@ -326,9 +341,11 @@ sub is_null {
     @{$_[0]->{list}} ? 0 : 1;
 }
 
+*is_empty = \&is_null;
+
 sub intersects {
     my $a = shift;
-    my ($b, $ia, $n);
+    my ($b, $ia, $m, $n);
     if (ref ($_[0]) eq ref($a) ) { 
         $b = shift;
     } 
@@ -338,15 +355,17 @@ sub intersects {
     my $ib;
     my ($na, $nb) = (0,0);
 
+    $m = $#{$b->{list}};
     $n = $#{$a->{list}};
     if ($n > 4) {
-        foreach $ib ($nb .. $#{$b->{list}}) {
+        foreach $ib ($m, $m-1, 0 .. $m - 2) {
             foreach $ia ($n, $n-1, 0 .. $n - 2) {
                 return 1 if _simple_intersects($a->{list}[$ia], $b->{list}[$ib]);
             }
         }
         return 0;
     }
+
     foreach $ib ($nb .. $#{$b->{list}}) {
         foreach $ia ($na .. $n) {
             return 1 if _simple_intersects($a->{list}[$ia], $b->{list}[$ib]);
@@ -359,11 +378,11 @@ sub iterate {
     # TODO: options 'no-sort', 'no-merge', 'keep-null' ...
     my $a = shift;
     my $iterate = $a->empty_set();
-    my ($tmp, $ia);
+    my (@tmp, $ia);
     my $subroutine = shift;
     foreach $ia (0 .. $#{$a->{list}}) {
-        $tmp = &{$subroutine} ( $a->new($a->{list}[$ia]), @_ );
-        $iterate = $iterate->union($tmp) if defined $tmp; 
+        @tmp = $subroutine->( $a->new($a->{list}[$ia]), @_ );
+        $iterate = $iterate->union(@tmp) if @tmp; 
     }
     return $iterate;    
 }
@@ -457,14 +476,14 @@ sub complement {
     }
 
     unless ( @{$self->{list}} ) {
-        return $self->new($neg_inf, $inf);
+        return $self->universal_set;
     }
     my $complement = $self->empty_set();
     @{$complement->{list}} = _simple_complement($self->{list}[0]); 
 
-    my $tmp = $self->empty_set();
+    my $tmp = $self->empty_set();    
     foreach my $ia (1 .. $#{$self->{list}}) {
-        @{$tmp->{list}} = _simple_complement($self->{list}[$ia]); 
+        @{$tmp->{list}} = _simple_complement($self->{list}[$ia]);
         $complement = $complement->intersection($tmp); 
     }
     return $complement;    
@@ -681,16 +700,12 @@ sub empty_set {
 }
 
 sub universal_set {
-    $_[0]->new( $neg_inf, $inf );
+    $_[0]->new( NEG_INFINITY, INFINITY );
 }
 
-sub minus {
-    shift->complement( @_ );
-}
+*minus = \&complement;
 
-sub difference {
-    shift->complement( @_ );
-}
+*difference = \&complement;
 
 sub simmetric_difference {
     my $a1 = shift;
@@ -817,7 +832,7 @@ sub real {
 
 sub as_string {
     my $self = shift;
-    return join( __PACKAGE__->separators(5), map { _simple_as_string($_) } @{$self->{list}} );
+    return join( $self->separators(5), map { $self->_simple_as_string($_) } @{$self->{list}} );
 }
 
 
@@ -830,7 +845,7 @@ __END__
 =head1 NAME
 
 Set::Infinite::Basic - Sets of intervals
-
+6
 =head1 SYNOPSIS
 
   use Set::Infinite::Basic;
@@ -892,7 +907,7 @@ Makes a new object from the object's data.
 
     $logic = $a->contains($b);
 
-    $logic = $a->is_null;
+    $logic = $a->is_null;  # also called "is_empty"
 
 =head2 Set functions:
 

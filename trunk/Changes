@@ -1,5 +1,8 @@
 Revision history for Perl extension Set::Infinite.
 
+- removed todo: "provide a constructor to build open sets"
+  because this is already documented in new().
+- fixed "separators" OO
 - New methods:
   universal_set
   empty_set

@@ -1,6 +1,7 @@
 package Set::Infinite;
 
-# Copyright (c) 2001, 2002, 2003 Flavio Soibelmann Glock. All rights reserved.
+# Copyright (c) 2001, 2002, 2003, 2004 Flavio Soibelmann Glock. 
+# All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
@@ -8,7 +9,8 @@ use 5.005_03;
 
 # These methods are inherited from Set::Infinite::Basic "as-is":
 #   type list fixtype numeric min max integer real new span copy
-#   start_set end_set
+#   start_set end_set universal_set empty_set minus difference
+#   simmetric_difference is_empty
 
 use strict;
 use base qw(Set::Infinite::Basic Exporter);
@@ -390,7 +392,7 @@ BEGIN {
                 for my $which1 ( $which, 1 - $which ) {
                   my $tmp_parent = $parent[$which1];
                   ($first1, $parent[$which1]) = @{ $first[$which1] };
-                  if ( $first1->is_null ) {
+                  if ( $first1->is_empty ) {
                     # warn "first1 empty! count $retry_count";
                     # trace_close;
                     # return $first1, undef;
@@ -1097,7 +1099,7 @@ sub intersection {
         my $arg0 = $a1->_quantize_span;
         my $arg1 = $b1->_quantize_span;
         unless (($arg0->{too_complex}) or ($arg1->{too_complex})) {
-            my $res = $arg0->_quantize_span->intersection( $arg1->_quantize_span );
+            my $res = $arg0->intersection( $arg1 );
             $a1->trace_close( arg => $res ) if $TRACE;
             return $res;
         }
@@ -1489,7 +1491,7 @@ the "type" and "density" characteristics.
 
 Returns the set of all elements from both sets.
 
-This function behaves like a "or" operation.
+This function behaves like an "OR" operation.
 
     $set1 = new Set::Infinite( [ 1, 4 ], [ 8, 12 ] );
     $set2 = new Set::Infinite( [ 7, 20 ] );
@@ -1502,7 +1504,7 @@ This function behaves like a "or" operation.
 
 Returns the set of elements common to both sets.
 
-This function behaves like a "and" operation.
+This function behaves like an "AND" operation.
 
     $set1 = new Set::Infinite( [ 1, 4 ], [ 8, 12 ] );
     $set2 = new Set::Infinite( [ 7, 20 ] );
@@ -1525,14 +1527,14 @@ Returns the set of all elements that don't belong to the set.
 
 The complement function might take a parameter:
 
-    $set = $a->complement($b);
+    $set = $a->minus($b);
 
 Returns the set-difference, that is, the elements that don't
 belong to the given set.
 
     $set1 = new Set::Infinite( [ 1, 4 ], [ 8, 12 ] );
     $set2 = new Set::Infinite( [ 7, 20 ] );
-    print $set1->complement( $set2 );
+    print $set1->minus( $set2 );
     # output: [1..4]
 
 =head2 simmetric_difference
@@ -1540,17 +1542,17 @@ belong to the given set.
 Returns a set containing elements that are in either set,
 but not in both. This is the "set" version of "XOR".
 
-=head1 DENSITY FUNCTIONS    
+=head1 DENSITY METHODS    
 
 =head2 real
 
-    $a->real;
+    $set1 = $a->real;
 
 Returns a set with density "0".
 
 =head2 integer
 
-    $a->integer;
+    $set1 = $a->integer;
 
 Returns a set with density "1".
 
@@ -1564,6 +1566,8 @@ Returns a set with density "1".
 
     $logic = $a->contains($b);
 
+=head2 is_empty
+
 =head2 is_null
 
     $logic = $a->is_null;
@@ -1576,7 +1580,7 @@ This happens with sets that represent infinite recurrences, such as
 when you ask for a quantization on a
 set bounded by -inf or inf.
 
-See also: C<count>.
+See also: C<count> method.
 
 =head1 SCALAR FUNCTIONS
 
@@ -1596,7 +1600,7 @@ See also: C<count>.
 
     $i = $a->count;
 
-=head1 OVERLOADED LANGUAGE OPERATORS
+=head1 OVERLOADED OPERATORS
 
 =head2 stringification
 
@@ -1612,11 +1616,11 @@ See also: C<as_string>.
 
     > < == >= <= <=> 
 
-See also: C<spaceship>.
+See also: C<spaceship> method.
 
 =head1 CLASS METHODS
 
-    separators(@i)
+    Set::Infinite->separators(@i)
 
         chooses the interval separators for stringification. 
 
@@ -1632,20 +1636,20 @@ See also: C<spaceship>.
 
 =head2 type
 
-    type($i)
+    type( "My::Class::Name" )
 
 Chooses a default object data type.
 
-default is none (a normal Perl SCALAR).
+Default is none (a normal Perl SCALAR).
 
 
-=head1 SPECIAL SET FUNCTIONS (WIDGETS)
+=head1 SPECIAL SET FUNCTIONS
 
 =head2 span
 
-    $i = $a->span;
+    $set1 = $a->span;
 
-        result is INTERVAL, (min .. max)
+Returns the set span.
 
 =head2 until
 
@@ -1714,7 +1718,7 @@ See diagram below:
 
     select( parameters )
 
-Selects set members based on their ordered positions
+Selects set spans based on their ordered positions
 
 C<select> has a behaviour similar to an array C<slice>.
 
@@ -1755,9 +1759,11 @@ In scalar context returns the first or last interval of a set.
 In list context returns the first or last interval of a set, 
 and the remaining set (the 'tail').
 
+See also: C<min>, C<max>, C<min_a>, C<max_a> methods.
+
 =head2 type
 
-    type($i)
+    type( "My::Class::Name" )
 
 Chooses a default object data type. 
 
@@ -1831,13 +1837,13 @@ Comparison of unbounded recurrences is not implemented.
 
 =over 4
 
-=item * "span" notation
+=item * constructor "span" notation
 
     $a = Set::Infinite->new(10,1);
 
 Will be interpreted as [1..10]
 
-=item * "multiple-span" notation
+=item * constructor "multiple-span" notation
 
     $a = Set::Infinite->new(1,2,3,4);
 
@@ -1863,7 +1869,7 @@ one or two I<parent objects>, and extra arguments.
 The C<list> key is set to an empty array, and the
 C<too_complex> key is set to C<1>.
 
-This is a structure that holds a union of two "complex sets":
+This is a structure that holds the union of two "complex sets":
 
   {
     too_complex => 1,             # "this is a recurrence"
@@ -1886,10 +1892,9 @@ This is a structure that holds the complement of a "complex set":
 
 =head1 SEE ALSO
 
-See modules DateTime::Set, DateTime::Event::Recurrence, and
-DateTime::Event::ICal for up-to-date information on date-sets.
-
-C<DateTime::Set>
+See modules DateTime::Set, DateTime::Event::Recurrence, 
+DateTime::Event::ICal, DateTime::Event::Cron
+for up-to-date information on date-sets.
 
 The perl-date-time project <http://datetime.perl.org> 
 

@@ -7,14 +7,15 @@ Set::Infinite TODO
   From a discussion with Andrew Pimlott and Dave Rolsky
 
 - Redo POD
+- difference between "size" and "count"
+
+- Change syntax: from Class::method to Class->method
 
 Old TODO:
 
-    - parser
+    - parser (another module)
 
     - _quantize_span should only be used inside backtrack()
-
-    - provide a constructor to build open sets
 
     - provide a constructor that allow for un-ordered and overlapping spans
 
@@ -47,18 +48,16 @@ BACKTRACK
     backtrack.t:
 
 	test backtrack on:
-		iterate
+		iterate -- returning more than 1 element
 		compact
 		no_cleanup
                 tolerance
                 complement
 
-	change $backtrack_arg2 = $arg->quantize(@param)->union(); to span()
-
 	backtracking: implement remaining tests in backtrack.t
 	verify results in backtrack.t
 
-	backtracking: document backtracking resolution
+    backtracking: document backtracking resolution
 
 SYNTAX
 
