@@ -1,9 +1,5 @@
 Set::Infinite TODO 
 
-- New methods: start_set / end_set 
-  These are the inverse of the "until" method.
-  Suggested by Reinhold May
-
 - New method: intersected_spans
   Suggested by Reinhold May
   Name suggested by Dave Rolsky

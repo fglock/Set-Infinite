@@ -40,7 +40,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.5501;
+    $VERSION = 0.5502;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -955,6 +955,7 @@ BEGIN {
             $before = $arg->min unless $before;
             my $after = $self->{parent}->intersection( $arg->max, $inf )->min;
             $after = $arg->max unless $after;
+
             return $arg->new( $before, $after );
         },
 
@@ -1138,6 +1139,20 @@ sub until {
         return $a1->_function2( 'until', $b1 );
     }
     return $a1->SUPER::until( $b1 );
+}
+
+
+sub start_set {
+    return $_[0]->iterate(
+        sub { $_[0]->min }
+    );
+}
+
+
+sub end_set {
+    return $_[0]->iterate(
+        sub { $_[0]->max }
+    );
 }
 
 
@@ -1576,6 +1591,23 @@ gives
 
     [0..2), [5..6), [7..10)
 
+=head2 start_set
+
+=head2 end_set
+
+These methods do the inverse of the "until" method.
+
+Given:
+
+    [0..2), [5..6), [7..10)
+
+start_set is:
+
+    0,5,7
+
+end_set is:
+
+    2,6,10
 
 =head2 quantize
 
