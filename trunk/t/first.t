@@ -40,8 +40,8 @@ $| = 1;
 
 # try _quantize_span
 
-$Set::Infinite::TRACE = 1;
-$Set::Infinite::PRETTY_PRINT = 1;
+# $Set::Infinite::TRACE = 1;
+# $Set::Infinite::PRETTY_PRINT = 1;
 
 $a = Set::Infinite->new([15,18])->quantize;
 $span = $a->_quantize_span;
