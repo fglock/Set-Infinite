@@ -1,5 +1,12 @@
 Set::Infinite TODO 
 
+- Methods "is_proper_subset" and "is_disjoint"
+  should test for 'undef' when calling set functions. 
+
+- quantize() should use "iterate"
+
+- spaceship should return "undef" if the sets can't be compared.
+
 - test new methods
 
 - methods:

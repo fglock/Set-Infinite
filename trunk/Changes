@@ -1,5 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
+0.5601  2004-03-20
+- iterate() first/last can deal with multiple spans
 - removed todo: "provide a constructor to build open sets"
   because this is already documented in new().
 - fixed "separators" OO

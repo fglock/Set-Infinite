@@ -43,7 +43,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.56;
+    $VERSION = 0.5601;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -481,10 +481,13 @@ BEGIN {
         sub {
             my $self = $_[0];
             my $parent = $self->{parent};
-            my @first = $parent->first;
-            $first[0] = $first[0]->iterate( @{$self->{param}} ) if ref($first[0]);
-            $first[1] = $first[1]->_function( 'iterate', @{$self->{param}} ) if ref($first[1]);
-            return @first;
+            my ($first, $tail) = $parent->first;
+            $first = $first->iterate( @{$self->{param}} ) if ref($first);
+            $tail  = $tail->_function( 'iterate', @{$self->{param}} ) if ref($tail);
+            my $more;
+            ($first, $more) = $first->first if ref($first);
+            $tail = $tail->_function2( 'union', $more ) if defined $more;
+            return ($first, $tail);
         },
     'until' =>
         sub {
@@ -723,10 +726,13 @@ BEGIN {
         sub {
             my $self = $_[0];
             my $parent = $self->{parent};
-            my @last = $parent->last;
-            $last[0] = $last[0]->iterate( @{$self->{param}} ) if ref($last[0]);
-            $last[1] = $last[1]->_function( 'iterate', @{$self->{param}} ) if ref($last[1]);
-            return @last;
+            my ($last, $tail) = $parent->last;
+            $last = $last->iterate( @{$self->{param}} ) if ref($last);
+            $tail = $tail->_function( 'iterate', @{$self->{param}} ) if ref($tail);
+            my $more;
+            ($last, $more) = $last->last if ref($last);
+            $tail = $tail->_function2( 'union', $more ) if defined $more;
+            return ($last, $tail);
         },
     'offset' =>
         sub {
