@@ -1440,6 +1440,7 @@ sub until {
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         my $u = $a1->_function2( 'until', $b1 );
         # first() code
+
         $a1->trace( title=>"computing first()" );
         my @first1 = $a1->first;
         my @first2 = $b1->first;
@@ -1449,14 +1450,20 @@ sub until {
         my ($first, $tail);
         if ( $first2[0] <= $first1[0] ) {
             $first = $a1->new()->until( $first2[0] );
-            $tail = $first1[0]->_function( "until", $first2[1] );
+            $tail = $a1->_function( "until", $first2[1] );
         }
         else {
             $first = $a1->new( $first1[0] )->until( $first2[0] );
-            $tail = $first1[1]->_function( "until", $first2[1] );
+            if ( defined $first1[1] ) {
+                $tail = $first1[1]->_function( "until", $first2[1] );
+            }
+            else {
+                $tail = undef;
+            }
         }
         $u->{first} = [ $first, $tail ];
         $a1->trace_close( arg => $u );
+
         return $u;
     }
     return $a1->SUPER::until( $b1 );
