@@ -10,6 +10,8 @@ Set::Infinite TODO
     - give more standard names to Arithmetic.pm variables
     - implement "last of quantize"
 
+    - remove _quantize_span()
+
     - a set with min == inf or max = -inf is an error!
 
     - tests for "iterate", "until" min/max/first

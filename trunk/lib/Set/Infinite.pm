@@ -342,7 +342,7 @@ sub select {
                 push @{$last->{list}}, $_->{list}[0] for @selected;
             }
 
-            # TODO: use 'push' instead of 'union'
+            # TODO: use 'push' and 'sort' instead of 'union'
             $res = $first->union( $last );
         }
     }
@@ -767,7 +767,7 @@ sub first {
         my $method = $self->{method};
         return $_first{$method}->($self) if exists $_first{$method};
 
-        $self->trace( title=> "redo" );
+        $self->trace( title=> "redo" ) if $TRACE;
         my $redo = $self->{parent}->$method( @{ $self->{param} } );
 
         # TODO: check for deep recursion!
@@ -806,21 +806,18 @@ sub last {
 # offset: offsets subsets
 sub offset {
     my $self = shift;
-
     if ($self->{too_complex}) {
         return $self->_function( 'offset', @_ );
     }
-
     $self->trace_open(title=>"offset") if $TRACE;
 
     my @a;
     my %param = @_;
-    my $b1 = $self->new();        # $self); # clone myself
+    my $b1 = $self->new();    
     my ($interval, $ia, $i);
     $param{mode} = 'offset' unless $param{mode};
 
     # optimization for 1-parameter offset
-
     if (($param{mode} eq 'begin') and ($#{$param{value}} == 1) and
         ($param{value}[0] == $param{value}[1]) and
         ($param{value}[0] == 0) ) {
@@ -830,7 +827,7 @@ sub offset {
                 # next unless defined $interval;  
                 $ia = $interval->{a};
                 push @a, { a => $ia , b => $ia,
-                        open_begin => 0 , open_end => 0 };
+                           open_begin => 0 , open_end => 0 };
             }
             $b1->{list} = \@a;        # change data
             $b1->{cant_cleanup} = 1;
@@ -839,17 +836,12 @@ sub offset {
     }
 
     unless (ref($param{value}) eq 'ARRAY') {
-        #print " [value:scalar:", $param{value} ,"]\n";
         $param{value} = [0 + $param{value}, 0 + $param{value}];
     }
-    $param{unit}   =      'one'    unless $param{unit};
-    my $parts  =      ($#{$param{value}}) / 2;
-    # $param{strict} =      0        unless $param{strict};
-    # $param{fixtype} =     1        unless exists $param{fixtype};
-    # $param{fetchsize} = $param{parts} * (1 + $#{ $self->{list} });
+    $param{unit} =    'one'  unless $param{unit};
+    my $parts    =    ($#{$param{value}}) / 2;
     my $sub_unit =    $Set::Infinite::Arithmetic::subs_offset2{$param{unit}};
     my $sub_mode =    $Set::Infinite::Arithmetic::_MODE{$param{mode}};
-    # $param{parent_list} = $self->{list};
 
     carp "unknown unit $param{unit} for offset()" unless defined $sub_unit;
     carp "unknown mode $param{mode} for offset()" unless defined $sub_mode;
@@ -864,33 +856,27 @@ sub offset {
 
     foreach $i (0 .. $#{ $self->{list} }) {
         $interval = $self->{list}[$i];
-        # next unless defined $interval;
         $ia =         $interval->{a};
         $ib =         $interval->{b};
         $open_begin = $interval->{open_begin};
         $open_end =   $interval->{open_end};
-        # do offset
         foreach $j (0 .. $parts) {
-                # print " [ofs($ia,$ib)] ";
-                ($this, $next) = &{ $sub_mode } 
-                    ( $sub_unit, $ia, $ib, @{$value[$j]} );
-                next if ($this > $next);    # skip if a > b
-                # print " [ = ofs($this,$next)] \n";
-                if ($this == $next) {
-                    $open_end = $open_begin;
-                    # $this = $next;  #  make sure to use the same object from cache!
+            # print " [ofs($ia,$ib)] ";
+            ($this, $next) = $sub_mode->( $sub_unit, $ia, $ib, @{$value[$j]} );
+            next if ($this > $next);    # skip if a > b
+            if ($this == $next) {
+                $open_end = $open_begin;
+            }
+            # skip this if don't need to "fixtype"
+            if ($self->{fixtype}) {
+                # bless results into 'type' class
+                if (ref($this) ne ref($ia) ) {
+                    $this = $ia->new($this);
+                    $next = $ia->new($next);
                 }
-                # skip this if don't need to "fixtype"
-                if ($self->{fixtype}) {
-                    # bless results into 'type' class
-                    # print " [ofs($this,$next) = $class] ";
-                    if (ref($this) ne ref($ia) ) {
-                            $this = $ia->new($this);
-                            $next = $ia->new($next);
-                    }
-                } 
-                push @a, { a => $this , b => $next ,
-                        open_begin => $open_begin , open_end => $open_end };
+            } 
+            push @a, { a => $this , b => $next ,
+                       open_begin => $open_begin , open_end => $open_end };
         }  # parts
     }  # self
     @a = sort { $a->{a} <=> $b->{a} } @a;
