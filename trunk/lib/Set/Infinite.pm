@@ -737,6 +737,13 @@ sub first {
             return @{$self->{first}} = ($first, $tail);
         } # end: first-union
 
+        if ($method eq 'until') {
+            my @parent = @{ $self->{parent} };
+            my $redo = $parent[0]->until( $parent[1] );
+            my @first = $redo->first;
+            return wantarray ? @first : $first[0];
+        }
+
         # 'quantize', 'select', 'recur_by_rule', 'offset', 'iterate'
         # warn "first() doesn't know how to do $method-first, but maybe $method() knows";
         # warn " parent was ".$self->{parent};
