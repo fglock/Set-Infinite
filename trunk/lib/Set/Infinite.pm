@@ -1447,12 +1447,12 @@ sub until {
         if ( $first2[0] <= $first1[0] ) {
             # added ->first because it returns 2 spans if $a1 == $a2
             $first = $a1->new()->until( $first2[0] )->first;
-            $tail = $a1->_function( "until", $first2[1] );
+            $tail = $a1->_function2( "until", $first2[1] );
         }
         else {
             $first = $a1->new( $first1[0] )->until( $first2[0] );
             if ( defined $first1[1] ) {
-                $tail = $first1[1]->_function( "until", $first2[1] );
+                $tail = $first1[1]->_function2( "until", $first2[1] );
             }
             else {
                 $tail = undef;
