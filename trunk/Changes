@@ -1,5 +1,6 @@
 Revision history for Perl extension Set::Infinite.
 
+0.5304
     added more tests: intersects/until/select
     optimized select()
     refactored quantize()
