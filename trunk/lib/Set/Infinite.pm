@@ -1383,10 +1383,12 @@ sub intersection {
         }
     }
     if ($a1->{too_complex}) {
-        $a1 = $a1->backtrack('intersection', $b1);
+        # added: unless $b1->{too_complex}
+        $a1 = $a1->backtrack('intersection', $b1) unless $b1->{too_complex};
     }  # don't put 'else' here
     if ($b1->{too_complex}) {
-        $b1 = $b1->backtrack('intersection', $a1);
+        # added: unless $b1->{too_complex}
+        $b1 = $b1->backtrack('intersection', $a1) unless $a1->{too_complex};
     }
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         $a1->trace_close( );
