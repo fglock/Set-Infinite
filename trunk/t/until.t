@@ -37,7 +37,7 @@ sub test {
 	print " \n";
 }
 
-print "1..40\n";
+print "1..41\n";
 $| = 1;
 
 # $Set::Infinite::TRACE = 1;
@@ -100,6 +100,12 @@ test ("iterate - unbounded recurrence - with backtracking helper",
     '$a->iterate( sub { { $_[0]->min + 54, $_[0]->max + 54 } },   '. 
     '             backtrack_callback =>                           '.
     '                sub { $_[0]->new( $_[0]->min - 54, $_[0]->max - 54 ) }, '.
+    '           )->intersection(5,45)                             ',
+    "14,34");
+test ("iterate - unbounded recurrence - with backtracking, easier syntax",
+    '$a->iterate( sub { $_[0]->min + 54, $_[0]->max + 54 },   '.
+    '             backtrack_callback =>                           '.
+    '                sub { $_[0]->min - 54, $_[0]->max - 54 }, '.
     '           )->intersection(5,45)                             ',
     "14,34");
 

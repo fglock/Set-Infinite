@@ -953,8 +953,10 @@ BEGIN {
         iterate => sub {
             my ($self, $arg) = @_;
 
-            return $arg = $self->{backtrack_callback}->( $arg )
-                if defined $self->{backtrack_callback};
+            if ( defined $self->{backtrack_callback} )
+            {
+                return $arg = $self->new( $self->{backtrack_callback}->( $arg ) );
+            }
 
             my $before = $self->{parent}->intersection( $neg_inf, $arg->min )->max;
             $before = $arg->min unless $before;
@@ -1760,11 +1762,25 @@ The callback argument C<$_[0]> is a span. If there are additional arguments they
 The callback can return a span, a hashref (see C<Set::Infinite::Basic>), a scalar, an object, or C<undef>.
 
 [EXPERIMENTAL]
-C<iterate> accepts a C<backtrack_callback> argument. This can be used
-when the data needs to be processed in some special way while backtracking.
+C<iterate> accepts an optional C<backtrack_callback> argument. 
+The purpose of the C<backtrack_callback> is to I<reverse> the
+iterate() function, overcoming the limitations of the internal
+backtracking algorithm.
 The syntax is:
 
     iterate ( sub { } , backtrack_callback => sub { }, @args )
+
+The C<backtrack_callback> can return a span, a hashref, a scalar, 
+an object, or C<undef>. 
+
+For example, the following snippet adds a constant to each
+element of an unbounded set:
+
+    $set1 = $set->iterate( 
+                 sub { $_[0]->min + 54, $_[0]->max + 54 }, 
+              backtrack_callback =>  
+                 sub { $_[0]->min - 54, $_[0]->max - 54 }, 
+              );
 
 =head2 first / last
 
