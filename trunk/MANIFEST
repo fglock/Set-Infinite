@@ -14,7 +14,6 @@ lib/Set/Infinite/Arithmetic.pm
 _todo/bigfloat.t
 _todo/bigint.t
 _todo/simple_bigfloat.t
-_todo/element_inf.t
 
 t/until.t
 t/date.t

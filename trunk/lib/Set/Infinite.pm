@@ -157,7 +157,6 @@ sub _function {
 sub _function2 {
     my ($self, $method, $arg) = (shift, shift, shift);
     unless ( $self->{too_complex} || $arg->{too_complex} ) {
-        # warn( "eval $method $self $arg" );
         return $self->$method($arg, @_);
     }
     my $b = $self->new();
@@ -179,9 +178,7 @@ sub quantize {
         (defined $min[0] && $min[0] == -&inf) or 
         (defined $max[0] && $max[0] == &inf)) {
         # $self->trace(title=>"quantize:backtrack"); 
-        # print " [quantize:backtrack] \n" if $DEBUG_BT;
         my $b = $self->_function( 'quantize', @_ );
-        # $b->trace( title=>"quantize: created a function: $b" );
 
         # TODO: find out how to calculate 'last'
         $b->{last} = [ undef, 0 ];
@@ -196,7 +193,6 @@ sub quantize {
                 $first = $self->new( $min[0] )->quantize(@_);
                 # warn "   quantize first = $first";
                 # move $self->min ahead
-                # $b->trace( title=>"quantize: first=$first complement=". $first->complement );
                 @{$b->{first}} = ($first, 
                     $b->{parent}->
                         _function2( 'intersection', $first->complement )->
@@ -264,16 +260,13 @@ sub quantize {
     }
 
     $rule{fixtype} = 1 unless exists $rule{fixtype};
-    # $Set::Infinite::Arithmetic::Init_quantizer{$rule{unit}} (\%rule);
     $Set::Infinite::Arithmetic::Init_quantizer{$rule{unit}}->(\%rule);
 
     $rule{sub_unit} = $Set::Infinite::Arithmetic::Offset_to_value{$rule{unit}};
     carp "Quantize unit '".$rule{unit}."' not implemented" unless ref( $rule{sub_unit} ) eq 'CODE';
 
     my ($max, $open_end) = $parent->max_a;
-    # $rule{offset} = $Set::Infinite::Arithmetic::Value_to_offset{$rule{unit}} (\%rule, $min);
     $rule{offset} = $Set::Infinite::Arithmetic::Value_to_offset{$rule{unit}}->(\%rule, $min);
-    # my $last_offset = $Set::Infinite::Arithmetic::Value_to_offset{$rule{unit}} (\%rule, $max);
     my $last_offset = $Set::Infinite::Arithmetic::Value_to_offset{$rule{unit}}->(\%rule, $max);
     $rule{size} = $last_offset - $rule{offset} + 1; 
     my ($index, $tmp, $this, $next);
@@ -300,9 +293,7 @@ sub quantize {
 
     $b->{list} = \@a;        # change data
     $b->{cant_cleanup} = 1;     
-    # print " [QUANT:returns:",ref($b),"] \n";
-    # $self->trace(title=>"quantize:end");
-    $self->trace_close( arg => $b );
+    $self->trace_close( arg => $b ) if $TRACE;
     return $b;
 }
 
@@ -311,9 +302,7 @@ sub quantize {
 
 sub select {
     my $self = shift;
-    # $TRACE =1;
     $self->trace_open(title=>"select") if $TRACE;
-    # $TRACE=0;
 
     # pre-process parameters
     my %param = @_;
@@ -325,9 +314,7 @@ sub select {
 
     my ($freq, $count);
 
-    # $param{freq}  = 1 unless exists $param{freq} or exists $param{by};
     $param{count} = $inf if exists $param{freq} and ! exists $param{count};
-    # ($param{freq}, $param{count}) = (1,1) unless exists $param{freq} and exists $param{count};
 
     $freq =  exists $param{freq}  ? $param{freq} :
              exists $param{count} ? 1 : $max;
@@ -345,9 +332,6 @@ sub select {
     my @min = $self->min_a;
     my @max = $self->max_a;
 
-    # if ( $self->{too_complex} && ($count != $inf) ) {
-    #    # warn "select is complex but defineable: min=".$self->min_a ." count=$count freq=$freq";
-    # }
     if ($self->{too_complex}) {
         $res = $self->_function( 'select', @_ );
 
@@ -504,9 +488,6 @@ sub select {
 # first() could also be called "car" as in Lisp
 # sub car { &first }
 
-# first() is the same as: select(by=>[0])
-#     extension: first( count => 3 ) returns n subsets
-
 # use Data::Dumper; warn "using Data::Dumper";
 
 sub first {
@@ -520,7 +501,6 @@ sub first {
     }
 
     $self->trace_open(title=>"first") if $TRACE;
-    # trace_open;
 
     if ( $self->{too_complex} ) {
         # my @parent = $self->min_a;
@@ -576,7 +556,6 @@ sub first {
             }
 
             # carp "first-tail not defined for method '$method'";
-            # my $tail = $self->new( $parent_complement->{list}[-1] )->intersection( $parent_min[1] );
             # warn "tail starts in ". $parent_min[0]->max;
             my @no_tail = $self->new(-$inf,$next[0]);
             $no_tail[0]->{list}[0]{open_end} = $next[1];
@@ -587,7 +566,6 @@ sub first {
             my $tail = $parent->union($no_tail[0])->complement;  
             # warn "tail $tail";
             $self->trace_close( arg => "$first $tail" ) if $TRACE;
-            # warn "first $method \n    self = $self \n    first = $first \n    tail = $tail";
             return @{$self->{first}} = ($first, $tail);
         }  # end: first-complement
 
@@ -637,7 +615,6 @@ sub first {
 
                   my $tmp_parent = $parent[$which1];
                   ($first1, $parent[$which1]) = @{ $first[$which1] };
-                  # $self->trace( title=>"which = $which1 < $first1 , $parent[$which1] >" );
 
                   # warn "ref ". ref($first1);
                   if ( $first1->is_null ) {
@@ -648,7 +625,6 @@ sub first {
                     $which = $which1;
                     last SEARCH;
                   }
-                  # warn "intersection is $first1 + $parent[$which1] ($min1[0]), $parent[1-$which1] ($min2[0]) count $retry_count";
 
                   # $TRACE = 1;
                   $intersection = $first1->intersection( $parent[1-$which1] );
@@ -681,7 +657,6 @@ sub first {
             }
 
             if ( $#{ $intersection->{list} } > 0 ) {
-                # warn "intersection has ". $#{ $intersection->{list} } . " elements: $intersection";
                 my $tail;
                 ($intersection, $tail) = $intersection->first;
                 $parent[$which] = $parent[$which]->union( $tail );
@@ -693,8 +668,6 @@ sub first {
                     $self->trace_close( arg => $intersection );
                     return $intersection;
             }
-            # my $tmp = $self->{parent}[$which]->complement( $intersection )->intersection (
-            #           $self->{parent}[1-$which]->complement( $intersection ) );
             my $tmp;
             if ( defined $parent[$which] and defined $parent[1-$which] ) {
                 $tmp = $parent[$which]->intersection ( $parent[1-$which] );
@@ -748,12 +721,6 @@ sub first {
             else {
                 $tail = $parent1->$method( $parent2 );
             }
-
-            # warn "   parent is a ".Dumper($self->{parent}[1]);
-
-            # warn " union $which ".$self->{parent}[0]."=$min1 ".$self->{parent}[1]."=$min2";
-            # warn " first=$first sample=$parent1 tail=$tail";
-            # carp "end: first from a $method";
             $self->trace_close( arg => "$first $tail" ) if $TRACE;
             return @{$self->{first}} = ($first, $tail);
         } # end: first-union
@@ -770,17 +737,12 @@ sub first {
         # warn " parent was ".$self->{parent};
         $self->trace( title=> "redo" );
         my $redo = $self->{parent}->$method( @{ $self->{param} } );
-        # my $new_method = exists $redo->{method} ? $redo->{method} : "[none]";
-        # $redo->trace( title=> "redo" ); 
-        # now we've got a ".$new_method;
 
         # TODO: check for deep recursion!
         my @first = $redo->first;
         $redo->trace_close( arg => "@first" ) if $TRACE;
         return wantarray ? @first : $first[0];  
     }
-
-    # $self->trace( title => "self = simple" );
     return $self->SUPER::first;
 }
 
@@ -1091,7 +1053,6 @@ sub offset {
         $open_end =   $interval->{open_end};
         # do offset
         foreach $j (0 .. $parts) {
-                # print " [ofs:$param{mode} $param{unit} value:", $param{value}[$j+$j], ",", $param{value}[$j+$j + 1],"]\n";
                 # print " [ofs($ia,$ib)] ";
                 ($this, $next) = &{ $sub_mode } 
                     ( $sub_unit, $ia, $ib, @{$value[$j]} );
@@ -1207,9 +1168,6 @@ sub backtrack {
     print " [BT$backtrack_depth-0:",join(";",@_),"] \n" if $DEBUG_BT;
     my $result;
     print " [bt$backtrack_depth-0-1:self=",join(";",%{$self}),"] \n" if $DEBUG_BT;
-    # print " [bt$backtrack_depth-1:caller:",join(";",caller),"] \n" if $DEBUG_BT;
-    # print " [bt$backtrack_depth-2:parent:",ref($self->{parent})," -- ",join(";",%{$self->{parent}}),"] \n" if $self->{parent} and not (ref($self->{parent}) eq 'ARRAY');
-    # print " [bt$backtrack_depth-3:complex:a,b] \n";
 
     # backtrack on parent sets
     if (ref($self->{parent}) eq 'ARRAY') {
@@ -1220,43 +1178,33 @@ sub backtrack {
         $self->trace( title=>"array - method is $method" );
 
         if ($self->{method} eq 'until') {
-            $self->trace( title=>"trying to find out from < $arg > - before" );
-            # warn "[ min,max = ", ( ref($arg->min) ? $arg->min->datetime : $arg->min ) ," - ", $arg->max,"]\n";
-            # warn "[ a-max = ", ( ref($self->{parent}[0]->max) ? $self->{parent}[0]->max->datetime : $self->{parent}[0]->max ) ," ]\n";
-            # warn "[ b-min = ", ( ref($self->{parent}[1]->min) ? $self->{parent}[1]->min->datetime : $self->{parent}[1]->min ) ," ]\n";
+            $self->trace( title=>"trying to find out from < $arg > - before" ) if $DEBUG_BT;
 
             my $before = $self->{parent}[0]->intersection( -$inf, $arg->min )->max;
             $before = $arg->min unless $before;
-            $self->trace( title=>"trying to find out from < $arg > - after" );
+            $self->trace( title=>"trying to find out from < $arg > - after" ) if $DEBUG_BT;
             my $after = $self->{parent}[1]->intersection( $arg->max, $inf )->min;
             $after = $arg->max unless $after;
-            $self->trace( title=>"before, after is < $before , $after >" );
+            $self->trace( title=>"before, after is < $before , $after >" ) if $DEBUG_BT;
             $arg = $arg->new( $before, $after );
         }
 
         my $result1 = $self->{parent}[0];
         $result1 = $result1->backtrack($method, $arg) if $result1->{too_complex};
-        # print " [bt$backtrack_depth-3-6:res1:$result] \n";
         my $result2 = $self->{parent}[1];
         $result2 = $result2->backtrack($method, $arg) if $result2->{too_complex};
-        # print " [bt$backtrack_depth-3-7:res2:$result] \n";
-
         if ( $result1->{too_complex} or $result2->{too_complex} ) {
-                # backtrack failed...
-                $backtrack_depth--;
-                $self->trace_close( arg => $self ) if $TRACE;
-
-                # return the simplified version
-                return $result1->_function2( $self->{method}, $result2 );
+            # backtrack failed...
+            $backtrack_depth--;
+            $self->trace_close( arg => $self ) if $TRACE;
+            # return the simplified version
+            return $result1->_function2( $self->{method}, $result2 );
         }
 
         # apply {method}
-        # print "\n\n<eval-2 method:$self->{method} - $the_method \n\n";
-        # $result = &{ \& { $self->{method} } } ($result1, $result2);
 
         my $method = $self->{method};
         $result = $result1->$method ($result2);
-        # print "\n\n/eval-2> \n\n";
 
         $backtrack_depth--;
         $self->trace_close( arg => $result ) if $TRACE;
@@ -1276,7 +1224,6 @@ sub backtrack {
 
     my $backtrack_arg2;
 
-        # print " [bt$backtrack_depth-3-06:res1:before_backtrack:$result1] \n";
         # $backtrack_arg must be modified second to method and param
         print " [bt$backtrack_depth-3-08:BEFORE:$arg;" . $my_method . ";",join(";",@param),"] \n" if $DEBUG_BT;
  
@@ -1305,8 +1252,6 @@ sub backtrack {
 
                 my @values = sort @{$tmp{value}};
 
-                # $arg->trace( title => "offset: unit => $tmp{unit}, mode => $tmp{mode}, value => [- $tmp{value}[0], - $tmp{value}[-1]] " );
-                # $backtrack_arg2 = $arg->offset( unit => $tmp{unit}, mode => $tmp{mode}, value => [- $tmp{value}[0], - $tmp{value}[-1]] );
                 $backtrack_arg2 = $arg->offset( unit => $tmp{unit}, mode => $tmp{mode}, value => [- $values[-1], - $values[0]] );
 
                 $backtrack_arg2 = $arg->union( $backtrack_arg2 );   # another hack - fixes some problems with 'begin' mode
@@ -1321,23 +1266,16 @@ sub backtrack {
             }
 
     print " [bt$backtrack_depth-3-10:AFTER:$backtrack_arg2;" . $my_method . ";",join(";",@param),"] \n" if $DEBUG_BT;
-    # print " [bt$backtrack_depth-3-11:  WAS:$arg] \n";
 
     $result1 = $result1->backtrack($method, $backtrack_arg2); # if $result1->{too_complex};
-    # print " [bt$backtrack_depth-3-12:res1:after_backtrack:$result1] \n";
     # apply {method}
 
     my $expr = 'return $result1->' . $self->{method} . '(@param)' if $DEBUG_BT;
     print " [bt$backtrack_depth-3-14:expr: $result1 -- ",$self->{method}," ]\n" if $DEBUG_BT;
     print " [bt$backtrack_depth-3-15:expr: $expr ; param: ", join(";",@param),"]\n" if $DEBUG_BT;
-    # print "\n\n<eval-1 method:$self->{method} - $the_method \n\n";
-    # $result = &{\& {$self->{method} } } ($result1, @param);
     $method = $self->{method};
     $result = $result1->$method (@param);
-    # print "\n\n/eval-1> \n\n";
     print " [bt$backtrack_depth-3-19:RESULT ",ref($result), "=",join(";",%{$result}),"=$result] \n" if $DEBUG_BT;
-    # print " [bt$backtrack_depth-3-22:  WAS:$arg] \n";
-    # print " [bt$backtrack_depth-3-25:end:res:$expr = $result] \n";
     $backtrack_depth--;
     $self->trace_close( arg => $result );
     return $result;
@@ -1487,9 +1425,6 @@ sub until {
         $a1->trace( title=>"computing first()" );
         my @first1 = $a1->first;
         my @first2 = $b1->first;
-        # $a1->trace( title=>"first got $first1[0] and $first2[0] (". defined ($first1[0]) . ";". defined ($first2[0]) .")" );
-        # $a1->trace( title=>"first $first1[0]{list}[0]{a} ".$first1[0]{list}[0]{open_end} );
-        # $a1->trace( title=>"first $first2[0]{list}[0]{a} ".$first2[0]{list}[0]{open_end} );
         my ($first, $tail);
         if ( $first2[0] <= $first1[0] ) {
             # added ->first because it returns 2 spans if $a1 == $a2
@@ -1626,7 +1561,6 @@ sub min_a {
 
         }
         else {
-            # warn "$method min parents = ". $self->{parent}[0] . " " . $self->{parent}[1];
             if ($method eq 'union') {
 
                 my @p1 = $self->{parent}[0]->min_a;
@@ -1724,7 +1658,7 @@ sub max_a {
                 return @{$self->{max}} = ($tmp, 1);
             }
 
-            $self->trace( title=>"creating sample for $method" );
+            $self->trace( title=>"creating sample for $method" ) if $TRACE;
             my $sample;
 
             # TODO: this is a Date::Set hack
