@@ -41,7 +41,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.5503;
+    $VERSION = 0.56;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -1129,6 +1129,12 @@ sub intersected_spans {
     # try to simplify $b1
     $b1 = $b1->intersection( $a1 )
         if $b1->{too_complex} && ! $a1->{too_complex};
+
+    # -- this should be an optimization, but it seems to be slower.
+    # return $a1->iterate(
+    #   # sub { return $_[0] if $b1->intersects( $_[0] ) }
+    #   sub { return $_[0] if $_[0]->intersects( $b1 ) }
+    # ) if ! $a1->{too_complex};
 
     return $b1->iterate(
         sub {
