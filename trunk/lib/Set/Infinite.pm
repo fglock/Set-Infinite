@@ -10,13 +10,17 @@ use strict;
 
 require Exporter;
 use Set::Infinite::Basic;
+    # These methods are inherited from Set::Infinite::Basic "as-is":
+    #   type  list  fixtype  numeric  min  max
+    #   integer  real  new  span  copy
 use Carp;
-use Data::Dumper; 
+# use Data::Dumper; 
 
 use vars qw( @ISA @EXPORT_OK @EXPORT $VERSION 
     $TRACE $DEBUG_BT $PRETTY_PRINT $inf $minus_inf $neg_inf 
     $too_complex $backtrack_depth 
-    $max_backtrack_depth $max_intersection_depth );
+    $max_backtrack_depth $max_intersection_depth
+    $trace_level %level_title );
 @ISA = qw( Set::Infinite::Basic Exporter );
 
 @EXPORT_OK = qw(inf $inf trace_open trace_close);
@@ -24,9 +28,16 @@ use vars qw( @ISA @EXPORT_OK @EXPORT $VERSION
 
 use Set::Infinite::Arithmetic;
 
+use overload
+    '<=>' => \&spaceship,
+    qw("" as_string),
+;
+
+
 # Infinity vars
 $inf            = 100**100**100;
 $neg_inf = $minus_inf  = -$inf;
+
 
 # obsolete methods - included for backward compatibility
 sub inf ()            { $inf }
@@ -34,8 +45,6 @@ sub minus_inf ()      { $minus_inf }
 *no_cleanup = \&Set::Infinite::Basic::_no_cleanup;
 sub compact { @_ }
 
-# internal "trace" variables for debugging
-use vars qw( $trace_level %level_title );
 
 BEGIN {
     $VERSION = 0.5302;
@@ -50,40 +59,7 @@ BEGIN {
     $max_intersection_depth = 5;  # first()
 }
 
-=head1 NAME
-
-Set::Infinite - Sets of intervals
-
-=head1 SYNOPSIS
-
-  use Set::Infinite;
-
-  $a = Set::Infinite->new(1,2);    # [1..2]
-  print $a->union(5,6);            # [1..2],[5..6]
-
-=head1 DESCRIPTION
-
-Set::Infinite is a Set Theory module for infinite sets. 
-
-It works with reals, integers, and objects.
-
-When it is used with date objects, this module provides schedule checks (intersections),
-unions, and infinite recurrences.
-
-=cut
-
-
-use overload
-    '<=>' => \&spaceship,
-    qw("" as_string),
-;
-
-# These methods are inherited from Set::Infinite::Basic "as-is":
-#   type  list  fixtype  numeric  min  max
-#   integer  real  new  span  copy
  
-# internal "trace" routines for debugging
-
 sub trace { # title=>'aaa'
     return $_[0] unless $TRACE;
     my ($self, %parm) = @_;
@@ -162,7 +138,6 @@ sub _function2 {
 
 
 # quantize: splits in same-size subsets
-
 sub quantize {
     my $self = shift;
     $self->trace_open(title=>"quantize") if $TRACE; 
@@ -981,6 +956,7 @@ sub _quantize_span {
     return $res;
 }
 
+
 sub _backtrack {
     my ($self, $method, $arg) = @_;
 
@@ -1496,6 +1472,7 @@ sub _pretty_print {
            " )";
 }
 
+
 sub as_string {
     my $self = shift;
     return ( $PRETTY_PRINT ? $self->_pretty_print : $too_complex ) 
@@ -1508,7 +1485,30 @@ sub as_string {
 sub DESTROY {}
 
 1;
+
 __END__
+
+
+=head1 NAME
+
+Set::Infinite - Sets of intervals
+
+=head1 SYNOPSIS
+
+  use Set::Infinite;
+
+  $a = Set::Infinite->new(1,2);    # [1..2]
+  print $a->union(5,6);            # [1..2],[5..6]
+
+=head1 DESCRIPTION
+
+Set::Infinite is a Set Theory module for infinite sets.
+
+It works with reals, integers, and objects.
+
+When it is used with date objects, this module provides schedule checks (intersections),
+unions, and infinite recurrences.
+
 
 =head1 SET FUNCTIONS
 
@@ -1749,8 +1749,6 @@ In scalar context returns the first interval of a set.
 
 In list context returns the first interval of a set, and the 'tail'.
 
-Works even in unbounded sets
-
 =head2 type
 
     type($i)
@@ -1826,10 +1824,6 @@ Implements the "comparison" operator.
 
 Comparison of unbounded recurrences is not implemented.
 
-=head1 NOTES ON DATES
-
-See modules DateTime::Set, DateTime::Event::Recurrence, and
-DateTime::Event::ICal for up-to-date information on date-sets. 
 
 =head1 CAVEATS
 
@@ -1889,6 +1883,9 @@ This is a structure that holds the complement of a "complex set":
 
 
 =head1 SEE ALSO
+
+See modules DateTime::Set, DateTime::Event::Recurrence, and
+DateTime::Event::ICal for up-to-date information on date-sets.
 
 C<DateTime::Set>
 

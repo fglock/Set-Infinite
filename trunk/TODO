@@ -1,27 +1,24 @@
 Set::Infinite TODO 
 
-    - fix unbalanced trace_open/close 
+    - verify and fix unbalanced trace_open/trace_close 
 
     - move _cleanup to S::I::Basic
 
+    - move (offset, quantize), or most of Arithmetic.pm, to Date::Set 
     - refactor "widgets" out of the main code. Maybe create
-      a Set::Infinite::Widgets directory.
+      a Set::Infinite::Widgets directory (offset, quantize).
 
     - a set with min == inf or max = -inf is an error!
 
-    - implement last of quantize
+    - implement "last of quantize"
 
-    - tests for iterate min/max/first
+    - tests for "iterate", "until" min/max/first
 
     - refactor backtracking, offset, quantize
 
-    - tests for min/max of iterate()
-
-    - test until() with first()/min()/max()
-
     - backtrack code to 'offset' is a hack - fix it.
 
-    - change "link to self" to "link to copy" in first()
+    - verify and fix: change "link to self" to "link to copy" in first()
 
     - document first()
 
@@ -30,13 +27,11 @@ Set::Infinite TODO
     - size() is wrong for open, "integer" sets.
       test!
 
-    - verify POD format and contents; un-mix POD and program
-
-    - make Set::Infinite::Date inherit Set::Infinite; 
-      make Set::Infinite::Date::Element a leaf-node?
-
-    - remove all references to 'mode', except in 'S::I::Date'
-    - move $self->{mode} to "Date" only.
+    - deprecate Set::Infinite::Date
+        - make Set::Infinite::Date inherit Set::Infinite; 
+          make Set::Infinite::Date::Element a leaf-node?
+        - remove all references to 'mode', except in 'S::I::Date'
+        - move $self->{mode} to "Date" only.
 
     - find out how to compare "<=>" unbounded sets
     - try using first() in intersects() and "<=>"
@@ -44,8 +39,6 @@ Set::Infinite TODO
 BACKTRACK
 
     backtrack.t:
-
-	make backtrack_result method
 
 	test backtrack on:
 		iterate
@@ -66,28 +59,14 @@ BACKTRACK
         backtracking should use new min/max methods (v.45) because they are
             faster/more correct
 
-	ok - backtracking quantize should round up and down values, according to unit, quant.
-		-- check if this is really necessary!
-		-- try using span, or create result directly (faster)
-		-- or: use 'offset' instead
-    test finding out min/max of integer open sets (see backtrack.t tests 2,3)
+        test finding out min/max of integer open sets (see backtrack.t tests 2,3)
 
 	backtracking: document backtracking resolution; document internal object data (partially done)
 
 SYNTAX
 
-	remove iterate ?
-	'iterate' options 'no-sort', 'no-merge', 'keep-null' ...
-
-	sort by[] -- 0 1 2 ... freq-3 freq-2 freq-1
-
-	'select' tests: add test for positive+negative 'by'
-
-	old: correct syntax problems due to accepting ( [ 1 .. 10 ] ) as input - see POD.
-
-	make 'freq' work with 'days', etc.
-
-	extra: offset option "middle"
+	'select' tests: add test for interleaved positive+negative 'by'
+            by => [ 0 1 2 ... freq-3 freq-2 freq-1 ]
 
 	extra: Make a 'strict' option for "quantize" and other filters, 
 	that will intersect
@@ -110,16 +89,15 @@ TESTS
 
 DOCUMENTATION
 
-	check: POD formatting 
+	check: POD formatting and contents 
 
 	verify, document parameter syntax everywhere
 
 	document:
-		new method 'compact'
-		offset option 'mode=>circle'
+		??? offset option 'mode=>circle'
 		new method 'list'
 		iterate
-		no_cleanup
+		??? no_cleanup
 
         document as "internal":
                 min_a
@@ -127,7 +105,7 @@ DOCUMENTATION
                 backtrack
 	        trace({options})
 
-	document: quantize extensibility through hash-subs
+	??? document: quantize extensibility through hash-subs
 
 CACHEING
 
@@ -139,19 +117,9 @@ CACHEING
 
 	think about: caching for union, etc  
 
-	old: Create a `dirty' variable so it knows when to cleanup.
-
 OTHER
 
-	find a better (bigger span) gmtime/timegm
+	??? check: cleanup "type" hack
 
-	check for negative-epoch errors (quantize, offset).
-
-	remove a lot of debug #-print lines
-
-	check: cleanup "type" hack
-
-	old: Make a global mode for `open_*' 
-
-	old: Quantize_Date should care of daylight savings time
+	??? old: Make a global mode for `open_*' 
 
