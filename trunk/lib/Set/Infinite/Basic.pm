@@ -394,37 +394,6 @@ sub is_disjoint {
     return $intersects;
 }
 
-sub intersects {
-    my $a1 = shift;
-    my ($b1, $ia, $m, $n);
-    if (ref ($_[0]) eq ref($a) ) { 
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
-    my $ib;
-    my ($na, $nb) = (0,0);
-
-    $m = $#{$b1->{list}};
-    $n = $#{$a1->{list}};
-    if ($n > 4) {
-        foreach $ib ($m, $m-1, 0 .. $m - 2) {
-            foreach $ia ($n, $n-1, 0 .. $n - 2) {
-                return 1 if _simple_intersects($a1->{list}[$ia], $b1->{list}[$ib]);
-            }
-        }
-        return 0;
-    }
-
-    foreach $ib ($nb .. $#{$b1->{list}}) {
-        foreach $ia ($na .. $n) {
-            return 1 if _simple_intersects($a1->{list}[$ia], $b1->{list}[$ib]);
-        }
-    }
-    0;    
-}
-
 sub iterate {
     # TODO: options 'no-sort', 'no-merge', 'keep-null' ...
     my $a1 = shift;
@@ -438,15 +407,21 @@ sub iterate {
     return $iterate;    
 }
 
+
 sub intersection {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) {
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
+    my $b1 = ref ($_[0]) eq ref($a1) ? $_[0] : $a1->new(@_);
+    return _intersection ( 'intersection', $a1, $b1 );
+}
+
+sub intersects {
+    my $a1 = shift;
+    my $b1 = ref ($_[0]) eq ref($a1) ? $_[0] : $a1->new(@_);
+    return _intersection ( 'intersects', $a1, $b1 );
+}
+
+sub _intersection {
+    my ( $op, $a1, $b1 ) = @_;
     my ($ia, $ib);
     my ($ma, $mb) = ($#{$a1->{list}}, $#{$b1->{list}});
     my $intersection = $a1->empty_set();
@@ -499,16 +474,27 @@ sub intersection {
             if ( ( $tmp1a <= $tmp1b ) and
                  ( ($tmp1a != $tmp1b) or 
                    (!$open_beg and !$open_end) or
-                   ($tmp1a == $inf) or
+                   ($tmp1a == $inf) or                 # XXX
                    ($tmp1a == $neg_inf)
                  )
-               ) {
-                push @a, 
+               ) 
+            {
+                if ( $op eq 'intersection' )
+                {
+                    push @a, 
                     { a => $tmp1a, b => $tmp1b, 
                       open_begin => $open_beg, open_end => $open_end } ;
+                }
+                if ( $op eq 'intersects' )
+                {
+                    return 1;
+                }
             }
         }
     }
+
+    return 0 if $op eq 'intersects';
+   
     $intersection->{list} = \@a;
     return $intersection;    
 }
