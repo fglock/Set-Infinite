@@ -24,7 +24,7 @@ use vars qw( @ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION
 @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } , qw(inf new $inf trace_open trace_close) );
 @EXPORT = qw();
 
-$VERSION = 0.50_01;
+$VERSION = 0.50_02;
 
 use Set::Infinite::Arithmetic;
 
@@ -147,7 +147,7 @@ sub _function {
     $b->{too_complex} = 1;
     $b->{parent} = $self;   
     $b->{method} = $method;
-    $b->{param}  = \@_;
+    $b->{param}  = [ @_ ];
     return $b;
 }
 
@@ -162,7 +162,7 @@ sub _function2 {
     $b->{too_complex} = 1;
     $b->{parent} = [ $self, $arg ];
     $b->{method} = $method;
-    $b->{param}  = \@_;
+    $b->{param}  = [ @_ ];
     return $b;
 }
 
