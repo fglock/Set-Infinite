@@ -1,4 +1,4 @@
-#/bin/perl
+#/bin/perl -w
 # Copyright (c) 2001 Flavio Soibelmann Glock. All rights reserved.
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
@@ -7,7 +7,7 @@
 #
 
 use strict;
-use warnings;
+# use warnings;
 
 use Set::Infinite qw($inf);
 $| = 1;
@@ -40,8 +40,8 @@ $| = 1;
 
 # try _quantize_span
 
-# $Set::Infinite::TRACE = 1;
-# $Set::Infinite::PRETTY_PRINT = 1;
+$Set::Infinite::TRACE = 1;
+$Set::Infinite::PRETTY_PRINT = 1;
 
 $a = Set::Infinite->new([15,18])->quantize;
 $span = $a->_quantize_span;

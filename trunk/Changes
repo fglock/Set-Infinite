@@ -1,5 +1,9 @@
 Revision history for Perl extension Set::Infinite.
 
+0.50_01    2003-08-26
+    compiles under Perl 5.00503.  Patch by Mathieu Arnold.
+    Does not pass all tests in 5.00503.
+
 0.50
     count()
     fixed: size() does not try to add 'zero' to object.

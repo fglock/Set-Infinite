@@ -4,9 +4,9 @@ package Set::Infinite::Basic;
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
-require 5.005_62;
+require 5.005_03;
 use strict;
-use warnings;
+# use warnings;
 
 require Exporter;
 use Carp;
@@ -789,8 +789,11 @@ sub count {
 sub size { 
     my ($self) = shift;
     my $tmp;
-    my $size; 
+    my $size;  # = 0;
     foreach(0 .. $#{$self->{list}}) {
+        # next unless defined $self->{list}->[$_];
+        # my @tmp = %{ $self->{list}->[$_] };
+        # warn " @tmp  tol=". $self->{tolerance};
         if ( $size ) {
             $size += $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
         }
@@ -798,7 +801,7 @@ sub size {
             $size = $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
         }
         if ( $self->{tolerance} ) {
-            $size += $self->{tolerance};
+            $size += $self->{tolerance} unless $self->{list}->[$_]->{open_end};
             $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
             $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
         }
