@@ -1,8 +1,13 @@
 Revision history for Perl extension Set::Infinite.
 
+0.5303
+    removed Set::Infinite::Date
+    removed /_eg directory
+    simplified README
+
 0.5302
-    select( freq => $n ) is deprecated. 
-    - It was never used, and the implementation was broken.
+    select( freq => $n ) is removed. 
+    - breaks Date::Set 0.28
     select( by => [] ) default is changed to 'All'.
     - in order to have the same behaviour as when 'freq' was omitted.
 

@@ -7,10 +7,10 @@ Set::Infinite TODO
     - move (offset, quantize), or most of Arithmetic.pm, to Date::Set 
     - refactor "widgets" out of the main code. Maybe create
       a Set::Infinite::Widgets directory (offset, quantize).
+    - give more standard names to Arithmetic.pm variables
+    - implement "last of quantize"
 
     - a set with min == inf or max = -inf is an error!
-
-    - implement "last of quantize"
 
     - tests for "iterate", "until" min/max/first
 
@@ -22,16 +22,8 @@ Set::Infinite TODO
 
     - document first()
 
-    - give more standard names to Arithmetic.pm variables
-
     - size() is wrong for open, "integer" sets.
       test!
-
-    - deprecate Set::Infinite::Date
-        - make Set::Infinite::Date inherit Set::Infinite; 
-          make Set::Infinite::Date::Element a leaf-node?
-        - remove all references to 'mode', except in 'S::I::Date'
-        - move $self->{mode} to "Date" only.
 
     - find out how to compare "<=>" unbounded sets
     - try using first() in intersects() and "<=>"
@@ -116,10 +108,4 @@ CACHEING
 	make a 'flush'-cache method. Make a 'cache-registry'.
 
 	think about: caching for union, etc  
-
-OTHER
-
-	??? check: cleanup "type" hack
-
-	??? old: Make a global mode for `open_*' 
 

@@ -48,7 +48,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.5302;
+    $VERSION = 0.5303;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -222,11 +222,6 @@ sub quantize {
         return $b;    
     }
 
-    if (ref($min)) {
-        # TODO: mode is 'Date' specific
-        $rule{mode} = $min->{mode} if (exists $min->{mode});
-    }
-
     $rule{fixtype} = 1 unless exists $rule{fixtype};
     $Set::Infinite::Arithmetic::Init_quantizer{$rule{unit}}->(\%rule);
 
@@ -248,11 +243,6 @@ sub quantize {
         else {
                 $tmp = Set::Infinite::Basic::_simple_new($this,$next, $rule{type} );
                 $tmp->{open_end} = 1;
-                # TODO: 'mode' is 'DATE' specific
-                if (exists $rule{mode}) {
-                    $tmp->{a}->mode($rule{mode});
-                    $tmp->{b}->mode($rule{mode});
-                }
         }
         next if ( $rule{strict} and not $rule{strict}->intersects($tmp));
         push @a, $tmp;
@@ -359,7 +349,7 @@ sub select {
             last unless $first;
             push @{$count_set->{list}}, $first->{list}[0];
             $count--;
-            last if $count == 0;
+            last if $count <= 0;
     }
     return $count_set;
 }
@@ -1505,10 +1495,7 @@ Set::Infinite - Sets of intervals
 
 Set::Infinite is a Set Theory module for infinite sets.
 
-It works with reals, integers, and objects.
-
-When it is used with date objects, this module provides schedule checks (intersections),
-unions, and infinite recurrences.
+It works with reals, integers, and objects (such as dates).
 
 
 =head1 SET FUNCTIONS
@@ -1660,8 +1647,6 @@ Chooses a default object data type.
 
 default is none (a normal Perl SCALAR).
 
-    type('Math::BigFloat');
-    type('Math::BigInt');
 
 =head1 SPECIAL SET FUNCTIONS (WIDGETS)
 
@@ -1689,13 +1674,7 @@ Note: this function is still experimental.
 
         Makes equal-sized subsets.
 
-        In array context: returns a tied reference to the subset list.
-        In set context: returns an ordered set of equal-sized subsets.
-
-        The quantization function is external to this module:
-        Parameters may vary depending on implementation. 
-
-        Positions for which a subset does not exist may show as undef.
+        Returns an ordered set of equal-sized subsets.
 
         Example: 
 
@@ -1758,10 +1737,6 @@ Chooses a default object data type.
 
 default is none (a normal perl SCALAR).
 
-examples: 
-
-        type('Math::BigFloat');
-        type('Math::BigInt');
 
 =head1 INTERNAL FUNCTIONS
 

@@ -42,8 +42,8 @@ sub stats {
 	}
 }
 
-Set::Infinite::type('Math::BigFloat');
-Set::Infinite::real;
+Set::Infinite->type('Math::BigFloat');
+Set::Infinite->real;
 
 print "\t# Add element:\n";
 
