@@ -812,6 +812,7 @@ sub tolerance {
         return $self->{tolerance} unless defined $tmp;
         $self = $self->copy;
         $self->{tolerance} = $tmp;
+        delete $self->{max};  # tolerance may change "max"
         return $self;
     }
     # global

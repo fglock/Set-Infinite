@@ -575,6 +575,14 @@ my %_first = (
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
             return @{$self->{first}} = ($first, $tail);
         },
+    'tolerance' =>
+        sub {
+            my $self = $_[0];
+            my ($first, $tail) = $self->{parent}->first;
+            $first = $first->tolerance( @{$self->{param}} );
+            $tail  = $tail->tolerance( @{$self->{param}} );
+            return @{$self->{first}} = ($first, $tail);
+        },
 );  # %_first
 
 my %_last = (
@@ -752,28 +760,28 @@ my %_last = (
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
             return @{$self->{last}} = ($last, $tail);
         },
+    'tolerance' =>
+        sub {
+            my $self = $_[0];
+            my ($last, $tail) = $self->{parent}->last;
+            $last = $last->tolerance( @{$self->{param}} );
+            $tail  = $tail->tolerance( @{$self->{param}} );
+            return @{$self->{last}} = ($last, $tail);
+        },
 );  # %_last
 
 
 sub first {
     my $self = $_[0];
     if (exists $self->{first} ) {
-        # from cache
         return wantarray ? @{$self->{first}} : $self->{first}[0];
     }
     $self->trace_open(title=>"first") if $TRACE;
-
     if ( $self->{too_complex} ) {
         my $method = $self->{method};
         return $_first{$method}->($self) if exists $_first{$method};
-
-        $self->trace( title=> "redo" ) if $TRACE;
-        my $redo = $self->{parent}->$method( @{ $self->{param} } );
-
-        # TODO: check for deep recursion!
-        my @first = $redo->first;
-        $redo->trace_close( arg => "@first" ) if $TRACE;
-        return wantarray ? @first : $first[0];  
+        my $redo = $self->{parent}->$method ( @{ $self->{param} } );
+        return @{$self->{first}} = $redo->first;
     }
     return $self->SUPER::first;
 }
@@ -782,22 +790,14 @@ sub first {
 sub last {
     my $self = $_[0];
     if (exists $self->{last} ) {
-        # from cache
         return wantarray ? @{$self->{last}} : $self->{last}[0];
     }
     $self->trace(title=>"last") if $TRACE;
-
     if ( $self->{too_complex} ) {
         my $method = $self->{method};
         return $_last{$method}->($self) if exists $_last{$method};
-
-        $self->trace( title=> "redo" ) if $TRACE;
-        my $redo = $self->{parent}->$method( @{ $self->{param} } );
-
-        # TODO: check for deep recursion!
-        my @last = $redo->last;
-        $redo->trace_close( arg => "@last" ) if $TRACE;
-        return wantarray ? @last : $last[0];
+        my $redo = $self->{parent}->$method ( @{ $self->{param} } );
+        return @{$self->{last}} = $redo->last;
     }
     return $self->SUPER::last;
 }
@@ -1191,20 +1191,8 @@ sub min_a {
     my $self = $_[0];
     return @{$self->{min}} if exists $self->{min};
     if ($self->{too_complex}) {
-        my $method = $self->{method};
-        if ( ref $self->{parent} eq 'ARRAY' ) {
-            my @first = $self->first;
-            return @{$self->{min}} = $first[0]->min_a if defined $first[0];
-        }
-        else {
-            my @first = $self->{parent}->first;
-            if ( defined $first[0] ) {
-                my @first = $self->{parent}->first;
-                my $set = $first[0]->$method( @{$self->{param}} )->first;
-                my @set_first = $set->first;
-                return @{$self->{min}} = $set_first[0]->min_a if defined $set_first[0];
-            }
-        }
+        my @first = $self->first;
+        return @{$self->{min}} = $first[0]->min_a if defined $first[0];
         return @{$self->{min}} = (undef, 0);
     }
     return $self->SUPER::min_a;
@@ -1215,19 +1203,8 @@ sub max_a {
     my $self = $_[0];
     return @{$self->{max}} if exists $self->{max};
     if ($self->{too_complex}) {
-        my $method = $self->{method};
-        if ( ref $self->{parent} eq 'ARRAY' ) {
-            my @last = $self->last;
-            return @{$self->{max}} = $last[0]->max_a if defined $last[0];
-        }
-        else {
-            my @last = $self->{parent}->last;
-            if ( defined $last[0] ) {
-                my $set = $last[0]->$method( @{$self->{param}} );
-                my @set_last = $set->last;
-                return @{$self->{max}} = $set_last[0]->max_a if defined $set_last[0];
-            }
-        }
+        my @last = $self->last;
+        return @{$self->{max}} = $last[0]->max_a if defined $last[0];
         return @{$self->{max}} = (undef, 0);
     }
     return $self->SUPER::max_a;
@@ -1293,9 +1270,7 @@ sub tolerance {
             $b1->{tolerance} = $tmp;   # for max/min processing
             return $b1;
         }
-        $self = $self->copy;
-        $self->{tolerance} = $tmp;
-        return $self;
+        return $self->SUPER::tolerance( $tmp );
     }
     # global
     __PACKAGE__->SUPER::tolerance( $tmp ) if defined($tmp);
