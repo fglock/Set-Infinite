@@ -49,7 +49,7 @@ BEGIN {
 
     $too_complex =    "Too complex";
     $backtrack_depth = 0;
-    $max_backtrack_depth = 10;    # backtrack()
+    $max_backtrack_depth = 10;    # _backtrack()
     $max_intersection_depth = 5;  # first()
 }
 
@@ -142,7 +142,7 @@ sub trace_close {
 
 
 # internal method
-# creates a 'function' object that can be solved by backtrack()
+# creates a 'function' object that can be solved by _backtrack()
 sub _function {
     my ($self, $method) = (shift, shift);
     my $b = $self->new();
@@ -645,14 +645,6 @@ my %_first = (
             $self->trace_close( arg => "$first $tail" ) if $TRACE;
             return @{$self->{first}} = ($first, $tail);
         }, # end: first-union
-    'until' =>
-        sub {
-            my $self = shift;
-            my @parent = @{ $self->{parent} };
-            my $redo = $parent[0]->until( $parent[1] );
-            my @first = $redo->first;
-            return wantarray ? @first : $first[0];
-        },
     'iterate' =>
         sub {
             my $self = shift;
@@ -1103,7 +1095,7 @@ sub _quantize_span {
     return $res;
 }
 
-sub backtrack {
+sub _backtrack {
     #
     #  NOTE: set/reset $DEBUG_BT to enable debugging
     #
@@ -1146,9 +1138,9 @@ sub backtrack {
         }
 
         my $result1 = $self->{parent}[0];
-        $result1 = $result1->backtrack($method, $arg) if $result1->{too_complex};
+        $result1 = $result1->_backtrack($method, $arg) if $result1->{too_complex};
         my $result2 = $self->{parent}[1];
-        $result2 = $result2->backtrack($method, $arg) if $result2->{too_complex};
+        $result2 = $result2->_backtrack($method, $arg) if $result2->{too_complex};
         if ( $result1->{too_complex} or $result2->{too_complex} ) {
             # backtrack failed...
             $backtrack_depth--;
@@ -1180,13 +1172,13 @@ sub backtrack {
 
     my $backtrack_arg2;
 
-        # $backtrack_arg must be modified second to method and param
-        print " [bt$backtrack_depth-3-08:BEFORE:$arg;" . $my_method . ";",join(";",@param),"] \n" if $DEBUG_BT;
+    # $backtrack_arg must be modified second to method and param
+    print " [bt$backtrack_depth-3-08:BEFORE:$arg;" . $my_method . ";",join(";",@param),"] \n" if $DEBUG_BT;
  
-            if ($my_method eq 'complement') {
+    if ($my_method eq 'complement') {
                 $backtrack_arg2 = $arg;  
-            }
-            elsif ($my_method eq 'quantize') {
+    }
+    elsif ($my_method eq 'quantize') {
 
                 if ($arg->{too_complex}) {
                     $backtrack_arg2 = $arg;
@@ -1194,9 +1186,9 @@ sub backtrack {
                 else {
                     $backtrack_arg2 = $arg->quantize(@param)->_quantize_span;
                 }
-            }
-            # offset - apply offset with negative values
-            elsif ($my_method eq 'offset') {
+    }
+    # offset - apply offset with negative values
+    elsif ($my_method eq 'offset') {
                 # (TODO) ????
                 my %tmp = @param;
 
@@ -1212,18 +1204,18 @@ sub backtrack {
 
                 $backtrack_arg2 = $arg->union( $backtrack_arg2 );   # another hack - fixes some problems with 'begin' mode
 
-            }
-            # select - check "by" behaviour
-            else {    # if ($my_method eq 'select') {
+    }
+    # select - check "by" behaviour
+    else {    # if ($my_method eq 'select') {
                 # (TODO) ????
                 # see: 'BIG, negative select' in backtrack.t
 
                 $backtrack_arg2 = $arg;
-            }
+    }
 
     print " [bt$backtrack_depth-3-10:AFTER:$backtrack_arg2;" . $my_method . ";",join(";",@param),"] \n" if $DEBUG_BT;
 
-    $result1 = $result1->backtrack($method, $backtrack_arg2); # if $result1->{too_complex};
+    $result1 = $result1->_backtrack($method, $backtrack_arg2); # if $result1->{too_complex};
     # apply {method}
 
     my $expr = 'return $result1->' . $self->{method} . '(@param)' if $DEBUG_BT;
@@ -1265,10 +1257,10 @@ sub intersects {
     }
     $a->trace(title=>"intersects");
     if ($a->{too_complex}) {
-        $a = $a->backtrack('intersection', $b);
+        $a = $a->_backtrack('intersection', $b);
     }  # don't put 'else' here
     if ($b->{too_complex}) {
-        $b = $b->backtrack('intersection', $a);
+        $b = $b->_backtrack('intersection', $a);
     }
     if (($a->{too_complex}) or ($b->{too_complex})) {
         return undef;   # we don't know the answer!
@@ -1307,11 +1299,11 @@ sub intersection {
     }
     if ($a1->{too_complex}) {
         # added: unless $b1->{too_complex}
-        $a1 = $a1->backtrack('intersection', $b1) unless $b1->{too_complex};
+        $a1 = $a1->_backtrack('intersection', $b1) unless $b1->{too_complex};
     }  # don't put 'else' here
     if ($b1->{too_complex}) {
         # added: unless $b1->{too_complex}
-        $b1 = $b1->backtrack('intersection', $a1) unless $a1->{too_complex};
+        $b1 = $b1->_backtrack('intersection', $a1) unless $a1->{too_complex};
     }
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         $a1->trace_close( ) if $TRACE;
@@ -1658,7 +1650,7 @@ sub no_cleanup {
     return $self;
 }
 
-sub cleanup {
+sub _cleanup {
     my ($self) = shift;
     return $self if $self->{too_complex};
     return $self if $self->{cant_cleanup};     # quantize output is "virtual", can't be cleaned
@@ -1715,7 +1707,7 @@ sub as_string {
     my $self = shift;
     return ( $PRETTY_PRINT ? $self->_pretty_print : $too_complex ) 
         if $self->{too_complex};
-    $self->cleanup;
+    $self->_cleanup;
     return $self->SUPER::as_string;
 }
 
@@ -1990,17 +1982,17 @@ examples:
 
 =head1 INTERNAL FUNCTIONS
 
-=head2 cleanup
+=head2 _cleanup
 
-    $a->cleanup;
+    $a->_cleanup;
 
 Internal function to fix the internal set representation.
 This is used after operations that might return invalid
 values.
 
-=head2 backtrack
+=head2 _backtrack
 
-    $a->backtrack( 'intersection', $b );
+    $a->_backtrack( 'intersection', $b );
 
 Internal function to evaluate recurrences.
 
