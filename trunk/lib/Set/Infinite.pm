@@ -28,11 +28,13 @@ use Set::Infinite::Arithmetic;
 $inf            = 100**100**100;
 $neg_inf = $minus_inf  = -$inf;
 
-# obsolete!
+# obsolete methods - included for backward compatibility
 sub inf ()            { $inf }
 sub minus_inf ()      { $minus_inf }
+*no_cleanup = \&Set::Infinite::Basic::_no_cleanup;
+sub compact { @_ }
 
-# internal "trace" routines for debugging
+# internal "trace" variables for debugging
 use vars qw( $trace_level %level_title );
 
 BEGIN {
@@ -216,8 +218,6 @@ sub quantize {
                         _function( 'quantize', @_ ) );
             }
 
-            @{$b->{min}} = $first->min_a;
-            @{$b->{max}} = $last->max_a;
             $b->trace_close( arg => $b ) if $TRACE;
             return $b;
         }
@@ -1404,7 +1404,17 @@ my %_min = (
                 unless (defined $first[0]) {
                     return @{$self->{min}} = (undef, 0);
                 }
-                my @min = $first[0]->min;
+                my @min = $first[0]->min_a;
+                return @{$self->{min}} = @min;
+            },
+    quantize => 
+            sub {
+                my ($self) = shift;
+                my @first = $self->first;
+                unless (defined $first[0]) {
+                    return @{$self->{min}} = (undef, 0);
+                }
+                my @min = $first[0]->min_a;
                 return @{$self->{min}} = @min;
             },
 ); # %_min
@@ -1468,12 +1478,21 @@ my %_max = (
                 }
                 return @{$self->{max}} = $p1[0] < $p2[0] ? @p1 : @p2;
             },
+    quantize =>
+            sub {
+                my ($self) = shift;
+                my @last = $self->last;
+                unless (defined $last[0]) {
+                    return @{$self->{max}} = (undef, 0);
+                }
+                my @max = $last[0]->max_a;
+                return @{$self->{max}} = @max;
+            },
 ); # %_max
 
 sub min_a { 
     my ($self) = shift;
     if (exists $self->{min} ) {
-        $self->trace(title=>"min_a cache= @{$self->{min}}" ) if $TRACE; 
         return @{$self->{min}};
     }
     $self->trace_open(title=>"min_a") if $TRACE; 
@@ -1489,7 +1508,7 @@ sub min_a {
                 $self->trace_close( arg => "undef 0" ) if $TRACE;
                 return @{$self->{min}} = (undef, 0);
             }
-            my @min = $first[0]->min;
+            my @min = $first[0]->min_a;
             $self->trace_close( arg => "@min" ) if $TRACE;
             return @{$self->{min}} = @min;
 
