@@ -1,5 +1,8 @@
 Revision history for Perl extension Set::Infinite.
 
+    documents that the parameters to new() must be sorted. 
+    Reported by Jim Cromie
+
 0.5401  2003-10-21
     specifying start > end in a constructor is a fatal error.
 

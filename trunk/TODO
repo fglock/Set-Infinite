@@ -1,8 +1,5 @@
 Set::Infinite TODO 
 
-    - document that the parameters to new() must be sorted.
-      Or fix it.  Bug report by Jim Cromie
-
     - bug fix needed:
 
       $set = Set::Infinite->new( -10, 0 );

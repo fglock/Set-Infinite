@@ -1314,6 +1314,24 @@ Set::Infinite is a Set Theory module for infinite sets.
 It works with reals, integers, and objects (such as dates).
 
 
+=head1 CONSTRUCTOR
+
+=head2 new
+
+    $set = Set::Infinite->new;             # empty set
+    $set = Set::Infinite->new( 10 );       # single element
+    $set = Set::Infinite->new( 10, 20 );   # single range
+    $set = Set::Infinite->new( 
+              [ 10, 20 ], [ 50, 70 ] );    # two ranges
+
+The C<new()> method expects ordered parameters.
+
+If you have unordered ranges, you can build the set using C<union>:
+
+    @ranges = ( [ 10, 20 ], [ -10, 1 ] );
+    $set = Set::Infinite->new;
+    $set = $set->union( @$_ ) for @ranges;
+
 =head1 SET FUNCTIONS
 
 =head2 union
