@@ -1,5 +1,6 @@
 Revision history for Perl extension Set::Infinite.
 
+    added 'intersects' tests
     optimized select()
 
 0.5303

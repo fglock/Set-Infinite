@@ -12,7 +12,7 @@ require Exporter;
 use Carp;
 use Data::Dumper; 
 use vars qw( @ISA @EXPORT_OK @EXPORT $VERSION );
-use vars qw( $Type $tolerance $fixtype $inf $minus_inf @separators );
+use vars qw( $Type $tolerance $fixtype $inf $minus_inf @separators $neg_inf );
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( INFINITY NEG_INFINITY );
@@ -20,7 +20,7 @@ use vars qw( $Type $tolerance $fixtype $inf $minus_inf @separators );
 $VERSION = '0.00_01';
 
 $inf            = 100**100**100;
-$minus_inf      = -$inf;
+$minus_inf = $neg_inf = -$inf;
 use constant INFINITY => $inf;
 use constant NEG_INFINITY => $minus_inf;
 
@@ -86,42 +86,39 @@ BEGIN {
 
 # _simple_* set of internal methods: basic processing of "spans"
 
-# TODO: POD
-# TODO: make these class or object methods, maybe?
-
 sub _simple_intersects {
     my ($tmp1, $tmp2) = (shift, shift);
-    return 0 unless defined $tmp1;
-    return 0 unless defined $tmp2;
     my ($i_beg, $i_end, $open_beg, $open_end);
-    if ($tmp1->{a} < $tmp2->{a}) {
-        $i_beg         = $tmp2->{a};
-        $open_beg     = $tmp2->{open_begin};
+    my $cmp = $tmp1->{a} <=> $tmp2->{a};
+    if ($cmp < 0) {
+        $i_beg       = $tmp2->{a};
+        $open_beg    = $tmp2->{open_begin};
     }
-    elsif ($tmp1->{a} == $tmp2->{a}) {
-        $i_beg         = $tmp1->{a};
-        $open_beg     = ($tmp1->{open_begin} or $tmp2->{open_begin});
-    }
-    else {
-        $i_beg         = $tmp1->{a};
+    elsif ($cmp > 0) {
+        $i_beg       = $tmp1->{a};
         $open_beg    = $tmp1->{open_begin};
     }
-
-    if ($tmp1->{b} > $tmp2->{b}) {
-        $i_end         = $tmp2->{b};
-        $open_end     = $tmp2->{open_end};
+    else {
+        $i_beg       = $tmp1->{a};
+        $open_beg    = ($tmp1->{open_begin} or $tmp2->{open_begin});
     }
-    elsif ($tmp1->{b} < $tmp2->{b}) {
-        $i_end         = $tmp1->{b};
+    $cmp = $tmp1->{b} <=> $tmp2->{b};
+    if ($cmp > 0) {
+        $i_end       = $tmp2->{b};
+        $open_end    = $tmp2->{open_end};
+    }
+    elsif ($cmp < 0) {
+        $i_end       = $tmp1->{b};
         $open_end    = $tmp1->{open_end};
     }
     else { 
-        $i_end         = $tmp1->{b};
-        $open_end     = ($tmp1->{open_end} or $tmp2->{open_end});
+        $i_end       = $tmp1->{b};
+        $open_end    = ($tmp1->{open_end} or $tmp2->{open_end});
     }
+    $cmp = $i_beg <=> $i_end;
     return 0 if 
-        ( $i_beg > $i_end ) or 
-        ( ($i_beg == $i_end) and ($open_beg or $open_end) ) ;
+        ( $cmp > 0 ) or 
+        ( ($cmp == 0) and ($open_beg or $open_end) ) ;
     return 1;
 }
 
@@ -132,10 +129,10 @@ sub _simple_complement {
     my $tmp1 = _simple_fastnew(-$inf, $self->{a}, 1, ! $self->{open_begin} );
     my $tmp2 = _simple_fastnew($self->{b}, $inf, ! $self->{open_end}, 1);
     if ($tmp2->{a} == $inf) {
-        return $simple_null if ($tmp1->{b} == -$inf);
+        return $simple_null if ($tmp1->{b} == $neg_inf);
         return $tmp1;
     }
-    return $tmp2 if ($tmp1->{b} == -$inf);
+    return $tmp2 if ($tmp1->{b} == $neg_inf);
     ($tmp1 , $tmp2);
 }
 
@@ -215,23 +212,21 @@ sub _simple_spaceship {
     my ($tmp1, $tmp2, $inverted) = @_;
     my $cmp;
     if ($inverted) {
-        $cmp = $tmp1->{a} <=> $tmp2->{a};
-        return -$cmp if $cmp;
+        $cmp = $tmp2->{a} <=> $tmp1->{a};
+        return $cmp if $cmp;
         $cmp = $tmp1->{open_begin} <=> $tmp2->{open_begin};
         return $cmp if $cmp;
-        $cmp = $tmp1->{b} <=> $tmp2->{b};
-        return -$cmp if $cmp;
-        $cmp = $tmp1->{open_end} <=> $tmp2->{open_end};
-        return $cmp;
+        $cmp = $tmp2->{b} <=> $tmp1->{b};
+        return $cmp if $cmp;
+        return $tmp1->{open_end} <=> $tmp2->{open_end};
     }
     $cmp = $tmp1->{a} <=> $tmp2->{a};
     return $cmp if $cmp;
-    $cmp = $tmp1->{open_begin} <=> $tmp2->{open_begin};
-    return -$cmp if $cmp;
+    $cmp = $tmp2->{open_begin} <=> $tmp1->{open_begin};
+    return $cmp if $cmp;
     $cmp = $tmp1->{b} <=> $tmp2->{b};
     return $cmp if $cmp;
-    $cmp = $tmp1->{open_end} <=> $tmp2->{open_end};
-    return -$cmp;
+    return $tmp2->{open_end} <=> $tmp1->{open_end};
 }
 
 

@@ -22,6 +22,7 @@ t/quantize.t
 t/select.t
 t/select_offset.t
 t/size.t
+t/basic_intersects.t
 
 META.yml                                Module meta-data (added by MakeMaker)
 
