@@ -789,11 +789,8 @@ sub count {
 sub size { 
     my ($self) = shift;
     my $tmp;
-    my $size;  # = 0;
+    my $size; 
     foreach(0 .. $#{$self->{list}}) {
-        # next unless defined $self->{list}->[$_];
-        # my @tmp = %{ $self->{list}->[$_] };
-        # warn " @tmp  tol=". $self->{tolerance};
         if ( $size ) {
             $size += $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
         }
@@ -801,7 +798,7 @@ sub size {
             $size = $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
         }
         if ( $self->{tolerance} ) {
-            $size += $self->{tolerance} unless $self->{list}->[$_]->{open_end};
+            $size += $self->{tolerance};
             $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
             $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
         }

@@ -3,8 +3,7 @@
 # This program is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
-# Tests for Set::Infinite::Quantize
-# This is work in progress
+# Tests for Set::Infinite::size() and count()
 #
 
 use strict;
@@ -33,7 +32,7 @@ sub test {
 	print " \n";
 }
 
-print "1..14\n";
+print "1..23\n";
 $| = 1;
 
 $set = Set::Infinite->new([10,12]);
@@ -64,8 +63,34 @@ $set = Set::Infinite->new([10,11]);
 $set = $set->complement( 11 );
 test ( 'new', '"$set"', '[10..11)');
 $set = $set->integer;
+test ("integer size",  '$set->size',  1);
+$set = $set->real;
+test ("real size",  '$set->size',  1);
+
+$set = Set::Infinite->new([10,11]);
+$set = $set->complement( 10 );
+test ( 'new', '"$set"', '(10..11]');
+$set = $set->integer;
+test ("integer size",  '$set->size',  1);
+$set = $set->real;
+test ("real size",  '$set->size',  1);
+
+$set = Set::Infinite->new([10,11]);
+$set = $set->complement( 10 );
+$set = $set->complement( 11 );
+test ( 'new', '"$set"', '(10..11)');
+$set = $set->integer;
 test ("integer size",  '$set->size',  0);
 $set = $set->real;
 test ("real size",  '$set->size',  1);
+
+$set = Set::Infinite->new([10,12]);
+$set = $set->complement( 10 );
+$set = $set->complement( 12 );
+test ( 'new', '"$set"', '(10..12)');
+$set = $set->integer;
+test ("integer size",  '$set->size',  1);
+$set = $set->real;
+test ("real size",  '$set->size',  2);
 
 1;
