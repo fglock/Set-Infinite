@@ -446,7 +446,7 @@ sub intersection {
         $tmp2 = $b1->{list}[$ib];
         $tmp2a = $tmp2->{a};
         $tmp2b = $tmp2->{b};
-         A: foreach $ia ($a0 .. $ma) {
+        A: foreach $ia ($a0 .. $ma) {
             $tmp1 = $a1->{list}[$ia];
             $tmp1b = $tmp1->{b};
 
