@@ -1480,9 +1480,9 @@ sub until {
         $a1->trace( title=>"computing first()" );
         my @first1 = $a1->first;
         my @first2 = $b1->first;
-        $a1->trace( title=>"first got $first1[0] and $first2[0] (". defined ($first1[0]) . ";". defined ($first2[0]) .")" );
-        $a1->trace( title=>"first $first1[0]{list}[0]{a} ".$first1[0]{list}[0]{open_end} );
-        $a1->trace( title=>"first $first2[0]{list}[0]{a} ".$first2[0]{list}[0]{open_end} );
+        # $a1->trace( title=>"first got $first1[0] and $first2[0] (". defined ($first1[0]) . ";". defined ($first2[0]) .")" );
+        # $a1->trace( title=>"first $first1[0]{list}[0]{a} ".$first1[0]{list}[0]{open_end} );
+        # $a1->trace( title=>"first $first2[0]{list}[0]{a} ".$first2[0]{list}[0]{open_end} );
         my ($first, $tail);
         if ( $first2[0] <= $first1[0] ) {
             # added ->first because it returns 2 spans if $a1 == $a2
