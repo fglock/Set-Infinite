@@ -623,6 +623,8 @@ sub copy {
     return $copy;
 }
 
+*clone = \&copy;
+
 
 sub new {
     my $class = shift;
@@ -829,6 +831,8 @@ gives
 Note: this function is still experimental.
 
 =head2 copy
+
+=head2 clone
 
 Makes a new object from the object's data.
 

@@ -37,7 +37,7 @@ sub test {
 	print " \n";
 }
 
-print "1..31\n";
+print "1..33\n";
 $| = 1;
 
 # $Set::Infinite::TRACE = 1;
@@ -108,6 +108,12 @@ test ("intersected_spans - semi-bounded - last",
 test ("intersected_spans - unbounded - first",
     '$a->until( $b )->intersected_spans($a)->intersection(5,45)',
     "[5..10),[20..30),[40..45]");
+test ("intersected_spans - span-set",
+    '$a->until( $b )->intersected_spans( [5,25], [65,85] )',
+    "[0..10),[20..30),[60..70),[80..90)");
+test ("intersected_spans - span-set",
+    '$a->until( $b )->intersection(0,100)->intersected_spans( [5,25], [65,85] )',
+    "[0..10),[20..30),[60..70),[80..90)");
 
 # let's test if contains() works properly with unbounded recurrences
 # because we'll need that

@@ -1126,26 +1126,22 @@ sub intersected_spans {
         $b1 = $a1->new(@_);
     }
 
-    if ( $a1->{too_complex} && $b1->{too_complex} ) {
-        return $b1->iterate(
-            sub { 
-                return $a1->intersected_spans( $_[0] ); 
-            }
-        );
-    }
+    return $b1->iterate(
+        sub {
+            my $tmp = $a1->intersection( $_[0] );
+            return $tmp unless defined $tmp->max;
 
-    my $tmp = $a1->intersection( $b1 );
-    return $tmp unless defined $tmp->max;
+            my $before = $a1->intersection( $neg_inf, $tmp->min )->last;
+            my $after =  $a1->intersection( $tmp->max, $inf )->first;
 
-    my $before = $a1->intersection( $neg_inf, $tmp->min )->last;
-    my $after =  $a1->intersection( $tmp->max, $inf )->first;
+            $tmp = $tmp->union( $before )
+                if defined $before && $tmp->intersects( $before );
+            $tmp = $tmp->union( $after )
+                if defined $after && $tmp->intersects( $after );
+            return $tmp;
+        }
+    );
 
-    $tmp = $tmp->union( $before )
-        if defined $before && $tmp->intersects( $before );
-    $tmp = $tmp->union( $after )
-        if defined $after && $tmp->intersects( $after );
-
-    return $tmp;
 }
 
 
@@ -1456,6 +1452,10 @@ This is the recommended way to do it:
     $set = Set::Infinite->new( $object_a->clone, $object_b->clone );
     $object_a->set_value( 10 );
 
+
+=head2 clone / copy
+
+Creates a new object, and copy the object data.
 
 =head1 SET FUNCTIONS
 
