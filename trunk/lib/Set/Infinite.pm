@@ -303,12 +303,11 @@ sub select {
     my $last;
     if ( @by ) 
     {
+        my @res;
         if ( ! $self->is_too_complex ) 
         {
             $res = $self->new;
-            my @a;
-            @a = grep { defined $_ } @{ $self->{list} }[ @by ] ;
-            $res->{list} = \@a;
+            @res = @{ $self->{list} }[ @by ] ;
         }
         else
         {
@@ -317,32 +316,35 @@ sub select {
                 ( $_ < 0 ) ? push @neg_by, $_ :
                              push @pos_by, $_;
             }
-
-            $first = $self->new();
-            $first->{cant_cleanup} = 1;
+            my @first;
             if ( @pos_by ) {
                 @pos_by = sort { $a <=> $b } @pos_by;
                 ( $tail, @set ) = $self->_first_n( 1 + $pos_by[-1] );
-                my @selected = @set[ @pos_by ];
-                push @{$first->{list}}, $_->{list}[0] for @selected;
+                @first = @set[ @pos_by ];
             }
-
-            $last = $self->new();
-            $last->{cant_cleanup} = 1;
+            my @last;
             if ( @neg_by ) {
                 @neg_by = sort { $a <=> $b } @neg_by;
                 ( $tail, @set ) = $self->_last_n( - $neg_by[0] );
-                my @selected = @set[ @neg_by ];
-                push @{$last->{list}}, $_->{list}[0] for @selected;
+                @last = @set[ @neg_by ];
             }
-
-            # TODO: use 'push' and 'sort' instead of 'union'
-            $res = $first->union( $last );
+            @res = map { $_->{list}[0] } ( @first , @last );
         }
+
+        $res = $self->new;
+        @res = sort { $a->{a} <=> $b->{a} } grep { defined } @res;
+        my $last;
+        my @a;
+        for ( @res ) {
+            push @a, $_ if ! $last || $last->{a} != $_->{a};
+            $last = $_;
+        }
+        $res->{list} = \@a;
+        $res->{cant_cleanup} = 1;
     }
     else
     {
-            $res = $self;
+        $res = $self;
     }
 
     return $res if $count == $inf;
@@ -351,14 +353,17 @@ sub select {
     if ( ! $self->is_too_complex )
     {
         my @a;
-        @a = grep { defined $_ } @{ $res->{list} }[ 0 .. $count - 1 ] ;
+        @a = grep { defined } @{ $res->{list} }[ 0 .. $count - 1 ] ;
         $count_set->{list} = \@a;
     }
     else
     {
+        my $last;
         while ( $res ) {
             ( $first, $res ) = $res->first;
             last unless $first;
+            last if $last && $last->{a} == $first->{list}[0]{a};
+            $last = $first->{list}[0];
             push @{$count_set->{list}}, $first->{list}[0];
             $count--;
             last if $count <= 0;
@@ -533,7 +538,6 @@ my %_first = (
             $a1->trace( title=>"computing first()" );
             my @first1 = $a1->first;
             my @first2 = $b1->first;
-            # warn " first $first1[0] , ". ($first1[1]->first)[0] ." .. $first2[0] , ".($first2[1]->first)[0];
             my ($first, $tail);
             if ( $first2[0] <= $first1[0] ) {
                 # added ->first because it returns 2 spans if $a1 == $a2
@@ -1558,9 +1562,10 @@ The callback can return a span, a hashref (see C<Set::Infinite::Basic>), a scala
 
     first / last
 
-In scalar context returns the first interval of a set.
+In scalar context returns the first or last interval of a set.
 
-In list context returns the first interval of a set, and the 'tail'.
+In list context returns the first or last interval of a set, 
+and the remaining set (the 'tail').
 
 =head2 type
 

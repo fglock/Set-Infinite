@@ -20,8 +20,6 @@ Set::Infinite TODO
 
     - backtrack code to 'offset' is a hack - fix it.
 
-    - document first()
-
     - find out how to compare "<=>" unbounded sets
     - try using first() in intersects() and "<=>"
 
@@ -55,9 +53,6 @@ BACKTRACK
 	backtracking: document backtracking resolution
 
 SYNTAX
-
-	'select' tests: add test for interleaved positive+negative 'by'
-            by => [ 0 1 2 ... freq-3 freq-2 freq-1 ]
 
 	extra: Make a 'strict' option for "quantize" and other filters, 
 	that will intersect

@@ -1,6 +1,6 @@
 Revision history for Perl extension Set::Infinite.
 
-    added more tests: intersects/until
+    added more tests: intersects/until/select
     optimized select()
 
 0.5303
@@ -10,7 +10,7 @@ Revision history for Perl extension Set::Infinite.
 
 0.5302
     select( freq => $n ) is removed. 
-    - breaks Date::Set 0.28
+    - breaks Date::Set 0.28 (Date::Set 0.29 is ok)
     select( by => [] ) default is changed to 'All'.
     - in order to have the same behaviour as when 'freq' was omitted.
 
