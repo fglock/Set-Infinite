@@ -229,30 +229,19 @@ sub _simple_spaceship {
 
 
 sub _simple_new {
-    my $tmp = shift;
-    return undef unless defined($tmp);
-    return $tmp if ref($tmp) eq 'HASH';
-    my ($tmp2, $type) = @_;
-    my $self;
-    if ($type and (ref($tmp) ne $type) ) { 
-        $tmp = new $type $tmp;
-    }
-    unless (defined $tmp2) {
-        $self->{a} = $self->{b} = $tmp;
-    }
-    else {
-        if ($type and (ref($tmp2) ne $type) ) {
+    my ($tmp, $tmp2, $type) = @_;
+    if ($type) {
+        if ( ref($tmp) ne $type ) { 
+            $tmp = new $type $tmp;
+        }
+        if ( ref($tmp2) ne $type ) {
             $tmp2 = new $type $tmp2;
         }
-        if ($tmp <= $tmp2) {
-            ($self->{a}, $self->{b}) = ($tmp, $tmp2);
-        }
-        else {
-            ($self->{a}, $self->{b}) = ($tmp2, $tmp);
-        }
     }
-    $self->{open_begin} = $self->{open_end} = 0;
-    $self;    
+    if ($tmp > $tmp2) {
+        ($tmp, $tmp2) = ($tmp2, $tmp);
+    }
+    return { a => $tmp , b => $tmp2 , open_begin => 0 , open_end => 0 };
 }
 
 
@@ -261,7 +250,7 @@ sub _simple_fastnew {
 }
 
 sub _simple_as_string {
-    my $self = shift;
+    my $self = $_[0];
     my $s;
     return "" unless defined $self;
     $self->{open_begin} = 1 if ($self->{a} == -$inf );
@@ -680,18 +669,22 @@ sub copy {
 
 sub new {
     my $class = shift;
-    my $class_name = ref($class) ? ref($class) : $class;
-    my ($self) = bless { list => [] }, $class_name;
-    # set up private variables
-    if (ref($class)) {
-        $self->{tolerance} = $class->{tolerance};
-        $self->{type}      = $class->{type};    
-        $self->{fixtype}   = $class->{fixtype};
+    my $self;
+    if ( ref $class ) {
+        $self = bless {
+                    list      => [],
+                    tolerance => $class->{tolerance},
+                    type      => $class->{type},
+                    fixtype   => $class->{fixtype},
+                }, ref($class);
     }
     else {
-        $self->{tolerance} = $tolerance ? $tolerance : 0;
-        $self->{type} =      $class_name->type;
-        $self->{fixtype} =   $fixtype   ? $fixtype : 0;
+        $self = bless { 
+                    list      => [],
+                    tolerance => $tolerance ? $tolerance : 0,
+                    type      => $class->type,
+                    fixtype   => $fixtype   ? $fixtype : 0,
+                }, $class;
     }
     my ($tmp, $tmp2, $ref);
     while (@_) {
@@ -713,8 +706,8 @@ sub new {
                 next;
             }
         }
-        $tmp2 = shift;
-        push @{ $self->{list} }, _simple_new($tmp,$tmp2, $self->{type} );
+        $tmp2 = shift || $tmp;
+        push @{ $self->{list} }, _simple_new($tmp,$tmp2, $self->{type} )
     }
     $self;
 }
