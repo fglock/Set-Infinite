@@ -1,5 +1,9 @@
 Revision history for Perl extension Set::Infinite.
 
+0.58    2004-06-14
+- intersected_spans was wrong when intersecting with
+  an open set. bug report & tests by Peter Oliver
+
 0.57    2004-04-03
 - CPAN update
 
