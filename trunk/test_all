@@ -1,0 +1,70 @@
+# tests this module and the modules that depend on it,
+# such that we know we didn't break anything :)
+#
+# this works on the CVS tree only.
+
+use strict;
+
+my @tests = qw(
+    Set::Infinite
+    DateTime::Set
+    DateTime::Span
+    DateTime::SpanSet
+    DateTime::Event::Recurrence
+    DateTime::Event::ICal
+);
+
+my $current_dir;
+
+for my $test ( @tests )
+{
+    my $dir = $test;
+    $dir .= '.pm' if $dir eq 'DateTime';
+    $dir =~ s/::/-/g;
+    $dir = "../" . $dir;
+    $current_dir = $dir unless $current_dir;
+
+    print "testing $test\n";
+
+    print "  directory $dir\n";
+    chdir $dir;
+
+    print "  processing Makefile.PL\n";
+    print `perl Makefile.PL`;
+
+    print "  testing\n";
+    print `make test`;
+
+    # TODO: did it pass?
+
+}
+chdir $current_dir;
+
+# report
+for my $test ( @tests ) 
+{
+    print "Tested: $test\n";
+
+    # TODO: did it pass?
+}
+
+
+=head1 AUTHOR
+
+Flavio Soibelmann Glock <fglock@pucrs.br>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2003 Flavio Soibelmann Glock.  
+All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+Portions of the code in this distribution are derived from other
+works.  Please see the CREDITS file for more details.
+
+The full text of the license can be found in the LICENSE file included
+with this module.
+
+=cut
+
