@@ -301,11 +301,7 @@ sub numeric {
     return $self;
 }
 
-sub _no_cleanup {
-    my ($self) = shift;
-    $self->{cant_cleanup} = 1;
-    return $self;
-}
+sub _no_cleanup { $_[0] }   # obsolete
 
 sub first {
     my $self = $_[0];
@@ -317,7 +313,7 @@ sub first {
     }
     my $first = $self->new( $self->{list}[0] );
     return $first unless wantarray;
-    my $res = $self->new->_no_cleanup;
+    my $res = $self->new;   
     push @{$res->{list}}, @{$self->{list}}[1 .. $#{$self->{list}}];
     return @{$self->{first}} = ($first) if $res->is_null;
     return @{$self->{first}} = ($first, $res);
@@ -333,7 +329,7 @@ sub last {
     }
     my $last = $self->new( $self->{list}[-1] );
     return $last unless wantarray;  
-    my $res = $self->new->_no_cleanup;
+    my $res = $self->new; 
     push @{$res->{list}}, @{$self->{list}}[0 .. $#{$self->{list}}-1];
     return @{$self->{last}} = ($last) if $res->is_null;
     return @{$self->{last}} = ($last, $res);
@@ -559,7 +555,7 @@ sub until {
 
     unless (defined $b1_min[0]) {
         return $a1->until($inf);
-    }
+    } 
     unless (defined $a1_max[0]) {
         return $a1->new(-$inf)->until($b1);
     }
@@ -592,7 +588,9 @@ sub until {
         $ia++;
         $last = $end;
     }
-    if ($ia <= $#{$a1->{list}}) {
+    if ($ia <= $#{$a1->{list}}  &&
+        $a1->{list}[$ia]{a} >= $last ) 
+    {
         push @{$u->{list}}, {
             a => $a1->{list}[$ia]{a} ,
             b => $inf ,
@@ -652,11 +650,21 @@ sub union {
         return $a1;
     }
 
+    my @tmp;
     B: foreach $ib ($ib .. $#{$b_list}) {
         foreach $ia ($ia .. $#{$a1->{list}}) {
-            my @tmp = _simple_union($a1->{list}[$ia], $b_list->[$ib], $a1->{tolerance});
+            @tmp = _simple_union($a1->{list}[$ia], $b_list->[$ib], $a1->{tolerance});
             if ($#tmp == 0) {
                     $a1->{list}[$ia] = $tmp[0];
+
+                    while (1) {
+                        last if $ia >= $#{$a1->{list}};    
+                        @tmp = _simple_union($a1->{list}[$ia], $a1->{list}[$ia + 1], $a1->{tolerance});
+                        last unless @tmp == 1;
+                        $a1->{list}[$ia] = $tmp[0];
+                        splice( @{$a1->{list}}, $ia + 1, 1 );
+                    }
+                    
                     next B;
             }
             if ($a1->{list}[$ia]{a} >= $b_list->[$ib]{a}) {
@@ -870,6 +878,22 @@ sub tolerance {
         $self = $self->copy;
         $self->{tolerance} = $tmp;
         delete $self->{max};  # tolerance may change "max"
+
+        $_ = 1;
+        my @tmp;
+        while ( $_ <= $#{$self->{list}} ) {
+            @tmp = Set::Infinite::Basic::_simple_union($self->{list}->[$_],
+                $self->{list}->[$_ - 1],
+                $self->{tolerance});
+            if ($#tmp == 0) {
+                $self->{list}->[$_ - 1] = $tmp[0];
+                splice (@{$self->{list}}, $_, 1);
+            }
+            else {
+                $_ ++;
+            }
+        }
+
         return $self;
     }
     # global

@@ -1,5 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
+0.60
+- _cleanup() / _no_cleanup() are obsolete
 - easier syntax to iterate()
 
 0.59    2004-07-01

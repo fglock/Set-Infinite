@@ -1,5 +1,7 @@
 Set::Infinite TODO 
 
+- include "backtrack_callback" in the parameter list for _function() 
+
 - document the "separators" method - use example from t/infinite.t
   Find out how to make it more user friendly.
 
@@ -52,8 +54,6 @@ Old TODO:
 
     - verify and fix unbalanced trace_open/trace_close 
 
-    - move _cleanup to S::I::Basic
-
     - move (offset, quantize), or most of Arithmetic.pm, to Date::Set 
     - refactor "widgets" out of the main code. Maybe create
       a Set::Infinite::Widgets directory (offset, quantize).
@@ -81,7 +81,6 @@ BACKTRACK
 	test backtrack on:
 		iterate -- returning more than 1 element
 		compact
-		no_cleanup
                 tolerance
                 complement
 
@@ -113,7 +112,6 @@ DOCUMENTATION
 		??? offset option 'mode=>circle'
 		new method 'list'
 		iterate
-		??? no_cleanup
 
         document as "internal":
                 min_a

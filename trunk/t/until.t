@@ -37,7 +37,7 @@ sub test {
 	print " \n";
 }
 
-print "1..41\n";
+print "1..42\n";
 $| = 1;
 
 # $Set::Infinite::TRACE = 1;
@@ -49,7 +49,9 @@ test ("until after,after",
 test ("until before,inside",
     '$a->until( [0],[20] )', "($neg_inf..0),[10..20),[30..$inf)");
 test ("until out of sync",
-    '$a->until( [-20],[0],[20],[40],[60] )', "($neg_inf..0),[10..20),[30..40)");
+    '$a->until( [-20],[0],[20],[40],[60] )', 
+    # "($neg_inf..0),[10..20),[30..40)" );   # also correct
+    "($neg_inf..-20),[-20..0),[10..20),[30..40)" );
 
 test ("until nothing",
     '$a->until()',
@@ -58,6 +60,10 @@ $a = Set::Infinite->new();
 test ("since nothing",
     '$a->until(10)',
     "($neg_inf..10)");
+test ("since nothing, again",
+    '$a->until([10],[30])',
+    # "($neg_inf..30)" );   # also correct
+    "($neg_inf..10)" );
 test ("since nothing until nothing",
     '$a->until()',
     "($neg_inf..$inf)");

@@ -37,13 +37,13 @@ $neg_inf = $minus_inf  = -$inf;
 # obsolete methods - included for backward compatibility
 sub inf ()            { $inf }
 sub minus_inf ()      { $minus_inf }
-*no_cleanup = \&Set::Infinite::Basic::_no_cleanup;
+sub no_cleanup { $_[0] }
 *type       = \&Set::Infinite::Basic::type;
 sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.59;
+    $VERSION = "0.60";
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -186,7 +186,6 @@ sub quantize {
     }
 
     $b->{list} = \@a;        # change data
-    $b->{cant_cleanup} = 1;     
     $self->trace_close( arg => $b ) if $TRACE;
     return $b;
 }
@@ -283,7 +282,6 @@ sub select {
             $last = $_;
         }
         $res->{list} = \@a;
-        $res->{cant_cleanup} = 1;
     }
     else
     {
@@ -292,7 +290,6 @@ sub select {
 
     return $res if $count == $inf;
     my $count_set = $self->empty_set();
-    $count_set->{cant_cleanup} = 1;
     if ( ! $self->is_too_complex )
     {
         my @a;
@@ -869,7 +866,6 @@ sub offset {
     }  # self
     @a = sort { $a->{a} <=> $b->{a} } @a;
     $b1->{list} = \@a;        # change data
-    $b1->{cant_cleanup} = 1; 
     $self->trace_close( arg => $b1 ) if $TRACE;
     $b1 = $b1->fixtype if $self->{fixtype};
     return $b1;
@@ -1278,25 +1274,7 @@ sub spaceship {
 }
 
 
-sub _cleanup {
-    my ($self) = shift;
-    return $self if $self->{too_complex};
-    return $self if $self->{cant_cleanup};   # "quantized" sets are lazy, can't be "cleaned"
-    $_ = 1;
-    while ( $_ <= $#{$self->{list}} ) {
-        my @tmp = Set::Infinite::Basic::_simple_union($self->{list}->[$_],
-            $self->{list}->[$_ - 1], 
-            $self->{tolerance});
-        if ($#tmp == 0) {
-            $self->{list}->[$_ - 1] = $tmp[0];
-            splice (@{$self->{list}}, $_, 1);
-        } 
-        else {
-            $_ ++;
-        }
-    }
-    return $self;
-}
+sub _cleanup { @_ }    # this subroutine is obsolete
 
 
 sub tolerance {
@@ -1333,7 +1311,6 @@ sub as_string {
     my $self = shift;
     return ( $PRETTY_PRINT ? $self->_pretty_print : $too_complex ) 
         if $self->{too_complex};
-    $self->_cleanup;
     return $self->SUPER::as_string;
 }
 
@@ -1746,11 +1723,11 @@ C<select> has a behaviour similar to an array C<slice>.
 
     offset ( parameters )
 
-        Offsets the subsets. Parameters: 
+Offsets the subsets. Parameters: 
 
-            value   - default=[0,0]
-            mode    - default='offset'. Possible values are: 'offset', 'begin', 'end'.
-            unit    - type of value. Can be 'days', 'weeks', 'hours', 'minutes', 'seconds'.
+    value   - default=[0,0]
+    mode    - default='offset'. Possible values are: 'offset', 'begin', 'end'.
+    unit    - type of value. Can be 'days', 'weeks', 'hours', 'minutes', 'seconds'.
 
 =head2 iterate
 
@@ -1805,14 +1782,6 @@ default is none (a normal perl SCALAR).
 
 
 =head1 INTERNAL FUNCTIONS
-
-=head2 _cleanup
-
-    $set->_cleanup;
-
-Internal function to fix the internal set representation.
-This is used after operations that might return invalid
-values.
 
 =head2 _backtrack
 
