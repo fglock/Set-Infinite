@@ -1445,7 +1445,8 @@ sub until {
         $a1->trace( title=>"first $first2[0]{list}[0]{a} ".$first2[0]{list}[0]{open_end} );
         my ($first, $tail);
         if ( $first2[0] <= $first1[0] ) {
-            $first = $a1->new()->until( $first2[0] );
+            # added ->first because it returns 2 spans if $a1 == $a2
+            $first = $a1->new()->until( $first2[0] )->first;
             $tail = $a1->_function( "until", $first2[1] );
         }
         else {
