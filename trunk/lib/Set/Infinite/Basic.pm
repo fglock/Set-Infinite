@@ -140,7 +140,8 @@ sub _simple_complement {
 sub _simple_union {
     my ($tmp2, $tmp1, $tolerance) = @_; 
     my %tmp1 = %$tmp1;
-    my %tmp2 = %$tmp2; 
+    my %tmp2 = %$tmp2;
+    my $cmp; 
     if ($tolerance) {
         # "integer"
         my $a1_open =  $tmp1{open_begin} ? -$tolerance : $tolerance ;
@@ -161,41 +162,39 @@ sub _simple_union {
     }
     else {
         # "real"
-        my $cmp1b2a = $tmp1{b} <=> $tmp2{a};
-        my $cmp1a2b = $tmp1{a} <=> $tmp2{b};
-        if ( $cmp1b2a < 0 ) {
+        $cmp = $tmp1{b} <=> $tmp2{a};
+        if ( $cmp < 0 ||
+             ( $cmp == 0 && $tmp1{open_end} && $tmp2{open_begin} ) ) {
             return ( $tmp1, $tmp2 );
         }
-        if ( $cmp1a2b > 0) {
-            return ( $tmp2, $tmp1 );
-        }
-        if ( ( $cmp1b2a == 0 ) and $tmp1{open_end} and $tmp2{open_begin}) {
-            return ( $tmp1, $tmp2 );
-        }
-        if ( ( $cmp1a2b == 0 ) and $tmp2{open_end} and $tmp1{open_begin}) {
+        $cmp = $tmp1{a} <=> $tmp2{b};
+        if ( $cmp > 0 || 
+             ( $cmp == 0 && $tmp2{open_end} && $tmp1{open_begin} ) ) {
             return ( $tmp2, $tmp1 );
         }
     }
 
     my %tmp;
-    if ($tmp1{a} > $tmp2{a}) {
+    $cmp = $tmp1{a} <=> $tmp2{a};
+    if ($cmp > 0) {
         $tmp{a} = $tmp2{a};
         $tmp{open_begin} = $tmp2{open_begin};
     }
-    elsif ($tmp1{a} == $tmp2{a}) {
+    elsif ($cmp == 0) {
         $tmp{a} = $tmp1{a};
-        $tmp{open_begin} = $tmp1{open_begin} ? $tmp2{open_begin}: 0;
+        $tmp{open_begin} = $tmp1{open_begin} ? $tmp2{open_begin} : 0;
     }
     else {
         $tmp{a} = $tmp1{a};
         $tmp{open_begin} = $tmp1{open_begin};
     }
 
-    if ($tmp1{b} < $tmp2{b}) {
+    $cmp = $tmp1{b} <=> $tmp2{b};
+    if ($cmp < 0) {
         $tmp{b} = $tmp2{b};
         $tmp{open_end} = $tmp2{open_end};
     }
-    elsif ($tmp1{b} == $tmp2{b}) {
+    elsif ($cmp == 0) {
         $tmp{b} = $tmp1{b};
         $tmp{open_end} = $tmp1{open_end} ? $tmp2{open_end} : 0;
     }
@@ -373,9 +372,7 @@ sub last {
 }
 
 sub is_null {
-    my $self = $_[0];
-    return 0 if @{$self->{list}};
-    return 1;
+    @{$_[0]->{list}} ? 0 : 1;
 }
 
 sub intersects {
@@ -505,23 +502,19 @@ sub complement {
         else {
             $a = $self->new(@_);  
         }
-        $a = $a->complement;
-        my $tmp =$self->intersection($a);
-        return $tmp;
+        return $self->intersection( $a->complement );
     }
 
-    my ($ia);
-    my $tmp;
-    if (($#{$self->{list}} < 0) or (not defined ($self->{list}))) {
-        return $self->new($minus_inf, $inf);
+    unless ( @{$self->{list}} ) {
+        return $self->new($neg_inf, $inf);
     }
     my $complement = $self->new();
     @{$complement->{list}} = _simple_complement($self->{list}->[0]); 
 
-    $tmp = $self->new();
-    foreach $ia (1 .. $#{$self->{list}}) {
+    my $tmp = $self->new();
+    foreach my $ia (1 .. $#{$self->{list}}) {
         @{$tmp->{list}} = _simple_complement($self->{list}->[$ia]); 
-        $complement = $complement->intersection($tmp); # if $tmp;
+        $complement = $complement->intersection($tmp); 
     }
     return $complement;    
 }
@@ -636,13 +629,12 @@ sub union {
 
     B: foreach $ib ($ib .. $#{$b_list}) {
         foreach $ia ($ia .. $#{$a1->{list}}) {
-            my @tmp = _simple_union($a1->{list}->[$ia], $b_list->[$ib], $a1->{tolerance});
+            my @tmp = _simple_union($a1->{list}[$ia], $b_list->[$ib], $a1->{tolerance});
             if ($#tmp == 0) {
-                    $a1->{list}->[$ia] = $tmp[0];
+                    $a1->{list}[$ia] = $tmp[0];
                     next B;
             }
-            my %hash = %{$b_list->[$ib]};
-            if ($a1->{list}->[$ia]->{a} >= $hash{a}) {
+            if ($a1->{list}[$ia]{a} >= $b_list->[$ib]{a}) {
                 splice (@{$a1->{list}}, $ia, 0, $b_list->[$ib]);
                 next B;
             }
@@ -768,17 +760,17 @@ sub count {
 sub size { 
     my $self = $_[0];
     my $size;  
-    foreach(0 .. $#{$self->{list}}) {
+    foreach( @{$self->{list}} ) {
         if ( $size ) {
-            $size += $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
+            $size += $_->{b} - $_->{a};
         }
         else {
-            $size = $self->{list}->[$_]->{b} - $self->{list}->[$_]->{a};
+            $size = $_->{b} - $_->{a};
         }
         if ( $self->{tolerance} ) {
-            $size += $self->{tolerance} unless $self->{list}->[$_]->{open_end};
-            $size -= $self->{tolerance} if $self->{list}->[$_]->{open_begin};
-            $size -= $self->{tolerance} if $self->{list}->[$_]->{open_end};
+            $size += $self->{tolerance} unless $_->{open_end};
+            $size -= $self->{tolerance} if $_->{open_begin};
+            $size -= $self->{tolerance} if $_->{open_end};
         }
     }
     return $size; 
@@ -809,7 +801,7 @@ sub spaceship {
         my $cmp = _simple_spaceship($this, $other);
         return $cmp if $cmp;   # this != $other;
     }
-    return $#{$tmp1->{list}} == $#{ $tmp2->{list} } ? 0 : -1;
+    return $#{ $tmp1->{list} } == $#{ $tmp2->{list} } ? 0 : -1;
 }
 
 sub tolerance {
