@@ -1382,8 +1382,16 @@ Set::Infinite - Sets of intervals
 
 Set::Infinite is a Set Theory module for infinite sets.
 
-It works with reals, integers, and objects (such as dates).
+A set is a collection of objects. 
+The objects that belong to a set are called its members, or "elements". 
 
+As objects we allow (almost) anything:  reals, integers, and objects (such as dates).
+
+We allow sets to be infinite.
+
+There is no account for the order of elements. For example, {1,2} = {2,1}.
+
+There is no account for repetition of elements. For example, {1,2,2} = {1,1,1,2} = {1,2}.
 
 =head1 CONSTRUCTOR
 
@@ -1571,6 +1579,31 @@ Returns a set with density "1".
 =head2 is_null
 
     $logic = $a->is_null;
+
+=head2 is_nonempty 
+
+This set that has at least 1 element.
+
+=head2 is_span 
+
+This set that has a single span or interval.
+
+=head2 is_singleton
+
+This set that has a single element.
+
+=head2 is_subset( $set )
+
+Every element of this set is a member of the given set.
+
+=head2 is_proper_subset( $set )
+
+Every element of this set is a member of the given set.
+Some members of the given set are not elements of this set.
+
+=head2 is_disjoint( $set )
+
+The given set has no elements in common with this set.
 
 =head2 is_too_complex
 

@@ -341,7 +341,51 @@ sub is_null {
     @{$_[0]->{list}} ? 0 : 1;
 }
 
-*is_empty = \&is_null;
+sub is_empty {
+    $_[0]->is_null;
+}
+
+sub is_nonempty {
+    ! $_[0]->is_null;
+}
+
+sub is_span {
+    ( $#{$_[0]->{list}} == 0 ) ? 1 : 0;
+}
+
+sub is_singleton {
+    ( $#{$_[0]->{list}} == 0 &&
+      $_[0]->{list}[0]{a} == $_[0]->{list}[0]{b} ) ? 1 : 0;
+}
+
+sub is_subset {
+    my $a = shift;
+    my $b;
+    if (ref ($_[0]) eq ref($a) ) { 
+        $b = shift;
+    } 
+    else {
+        $b = $a->new(@_);  
+    }
+    return $b->contains( $a );
+}
+
+sub is_proper_subset {
+    my $a = shift;
+    my $b;
+    if (ref ($_[0]) eq ref($a) ) { 
+        $b = shift;
+    } 
+    else {
+        $b = $a->new(@_);  
+    }
+    return $b->contains( $a ) && 
+           $a != $b;
+}
+
+sub is_disjoint {
+    return ! shift->intersects( @_ );
+}
 
 sub intersects {
     my $a = shift;

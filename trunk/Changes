@@ -4,6 +4,11 @@ Revision history for Perl extension Set::Infinite.
   because this is already documented in new().
 - fixed "separators" OO
 - New methods:
+  is_span
+  is_singleton
+  is_subset
+  is_proper_subset
+  is_disjoint
   universal_set
   empty_set
   minus / difference (same as "complement")

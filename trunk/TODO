@@ -1,10 +1,18 @@
 Set::Infinite TODO 
 
+- test new methods
+
+- methods:
+  is_infinite
+  exists( sub ) / any / ...
+
 - Deprecate min_a()
   min() should check "wantarray", instead.
 
 - New methods: map / grep
   From a discussion with Andrew Pimlott and Dave Rolsky
+  Find out how to implement "block" syntax 
+  (" {} " instead of " sub{} ")
 
 - Redo POD
 - difference between "size" and "count"
