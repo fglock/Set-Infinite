@@ -1185,12 +1185,18 @@ sub backtrack {
         # print " [bt$backtrack_depth-3.5:complex: 2-PARENTS ] \n";
 
         $self->trace( title=>"array - method is $method" );
+
         if ($self->{method} eq 'until') {
             $self->trace( title=>"trying to find out from < $arg > - before" );
-            # print "[ min,max = ",$arg->min," - ", $arg->max,"]\n";
+            # warn "[ min,max = ", ( ref($arg->min) ? $arg->min->datetime : $arg->min ) ," - ", $arg->max,"]\n";
+            # warn "[ a-max = ", ( ref($self->{parent}[0]->max) ? $self->{parent}[0]->max->datetime : $self->{parent}[0]->max ) ," ]\n";
+            # warn "[ b-min = ", ( ref($self->{parent}[1]->min) ? $self->{parent}[1]->min->datetime : $self->{parent}[1]->min ) ," ]\n";
+
             my $before = $self->{parent}[0]->intersection( -$inf, $arg->min )->max;
+            $before = $arg->min unless $before;
             $self->trace( title=>"trying to find out from < $arg > - after" );
             my $after = $self->{parent}[1]->intersection( $arg->max, $inf )->min;
+            $after = $arg->max unless $after;
             $self->trace( title=>"before, after is < $before , $after >" );
             $arg = $arg->new( $before, $after );
         }
