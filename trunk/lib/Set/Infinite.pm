@@ -1126,6 +1126,10 @@ sub intersected_spans {
         $b1 = $a1->new(@_);
     }
 
+    # try to simplify $b1
+    $b1 = $b1->intersection( $a1 )
+        if $b1->{too_complex} && ! $a1->{too_complex};
+
     return $b1->iterate(
         sub {
             my $tmp = $a1->intersection( $_[0] );

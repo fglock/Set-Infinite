@@ -1,6 +1,7 @@
 Revision history for Perl extension Set::Infinite.
 
 - New method: clone (same as "copy")
+- More tests & fixes: intersected_spans
 
 0.5503  2004-03-15
 - New method: intersected_spans
