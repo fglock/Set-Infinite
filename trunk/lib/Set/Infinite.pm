@@ -485,6 +485,217 @@ sub select {
     return $res;
 }
 
+my %_first = (
+    'complement' =>
+        sub {
+            my $self = shift;
+            my @parent_min = $self->{parent}->first;
+            unless ( defined $parent_min[0] ) {
+                    return wantarray ? (undef, 0) : undef;
+            }
+            my $parent_complement;
+            my $first;
+            my @next;
+            my $parent;
+            if ( $parent_min[0]->min == -$inf ) {
+                my @parent_second = $parent_min[1]->first;
+                #    (-inf..min)        (second..?)
+                #            (min..second)   = complement
+                $first = $self->new( $parent_min[0]->complement );
+                $first->{list}[0]{b} = $parent_second[0]->{list}[0]{a};
+                $first->{list}[0]{open_end} = ! $parent_second[0]->{list}[0]{open_begin};
+                @{ $first->{list} } = () if 
+                    ( $first->{list}[0]{a} == $first->{list}[0]{b}) && 
+                        ( $first->{list}[0]{open_begin} ||
+                          $first->{list}[0]{open_end} );
+                @next = $parent_second[0]->max_a;
+                $parent = $parent_second[1];
+            }
+            else {
+                #            (min..?)
+                #    (-inf..min)        = complement
+                $parent_complement = $parent_min[0]->complement;
+                $first = $self->new( $parent_complement->{list}[0] );
+                @next = $parent_min[0]->max_a;
+                $parent = $parent_min[1];
+            }
+            unless (wantarray) {
+                return $first;
+            }
+
+            my @no_tail = $self->new(-$inf,$next[0]);
+            $no_tail[0]->{list}[0]{open_end} = $next[1];
+            my $tail = $parent->union($no_tail[0])->complement;  
+            return @{$self->{first}} = ($first, $tail);
+        },  # end: first-complement
+
+);  # %_first
+
+my %_last = (
+    'complement' =>
+        sub {
+            my $self = shift;
+            my @parent_max = $self->{parent}->last;
+            unless ( defined $parent_max[0] ) {
+                return wantarray ? (undef, 0) : undef;
+            }
+            my $parent_complement;
+            my $last;
+            my @next;
+            my $parent;
+            if ( $parent_max[0]->max == $inf ) {
+                #    (inf..min)        (second..?) = parent
+                #            (min..second)         = complement
+                my @parent_second = $parent_max[1]->last;
+                $last = $self->new( $parent_max[0]->complement );
+                $last->{list}[0]{a} = $parent_second[0]->{list}[0]{b};
+                $last->{list}[0]{open_begin} = ! $parent_second[0]->{list}[0]{open_end};
+                @{ $last->{list} } = () if
+                    ( $last->{list}[0]{a} == $last->{list}[0]{b}) &&
+                        ( $last->{list}[0]{open_end} ||
+                          $last->{list}[0]{open_begin} );
+                @next = $parent_second[0]->min_a;
+                $parent = $parent_second[1];
+            }
+            else {
+                #            (min..?)
+                #    (-inf..min)        = complement
+                $parent_complement = $parent_max[0]->complement;
+                $last = $self->new( $parent_complement->{list}[-1] );
+                @next = $parent_max[0]->min_a;
+                $parent = $parent_max[1];
+            }
+            unless (wantarray) {
+                $self->trace_close( arg => $last ) if $TRACE;
+                return $last;
+            }
+            my @no_tail = $self->new($next[0], $inf);
+            $no_tail[0]->{list}[-1]{open_begin} = $next[1];
+            my $tail = $parent->union($no_tail[-1])->complement;
+            return @{$self->{last}} = ($last, $tail);
+        },
+    'intersection' =>
+        sub {
+            my $self = shift;
+            my @parent = @{ $self->{parent} };
+            # TODO: check max1/max2 for undef
+
+            my $retry_count = 0;
+            my (@last, @max, $which, $last1, $intersection);
+
+            SEARCH: while ($retry_count++ < $max_intersection_depth) {
+                return undef unless defined $parent[0];
+                return undef unless defined $parent[1];
+
+                @{$last[0]} = $parent[0]->last;
+                @{$last[1]} = $parent[1]->last;
+                unless ( defined $last[0][0] ) {
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
+                    return undef;
+                }
+                unless ( defined $last[1][0] ) {
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
+                    return undef;
+                }
+                @{$max[0]} = $last[0][0]->max_a;
+                @{$max[1]} = $last[1][0]->max_a;
+                unless ( defined $max[0][0] && defined $max[1][0] ) {
+                    $self->trace( title=>"can't find max()" ) if $TRACE;
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
+                    return undef;
+                }
+
+                # $which is the index to the smaller "last".
+                $which = ($max[0][0] > $max[1][0]) ? 1 : 0;
+
+                for my $which1 ( $which, 1 - $which ) {
+
+                  my $tmp_parent = $parent[$which1];
+                  ($last1, $parent[$which1]) = @{ $last[$which1] };
+                  if ( $last1->is_null ) {
+                    $which = $which1;
+                    $intersection = $last1;
+                    last SEARCH;
+                  }
+                  $intersection = $last1->intersection( $parent[1-$which1] );
+
+                  unless ( $intersection->is_null ) {
+                    # $self->trace( title=>"got an intersection" );
+                    if ( $intersection->is_too_complex ) {
+                        $self->trace( title=>"got a too_complex intersection" ); 
+                        # warn "too complex intersection";
+                        $parent[$which1] = $tmp_parent;
+                    }
+                    else {
+                        $self->trace( title=>"got an intersection" );
+                        $which = $which1;
+                        last SEARCH;
+                    }
+                  };
+
+                }
+
+                $self->trace( title=>"next try" );
+            }
+            $self->trace( title=>"exit loop" );
+            if ( $intersection->is_null ) {
+                $self->trace( title=> "got no intersection so far" );
+            }
+
+            if ( $#{ $intersection->{list} } > 0 ) {
+                my $tail;
+                ($intersection, $tail) = $intersection->last;
+                $parent[$which] = $parent[$which]->union( $tail );
+            }
+            unless (wantarray) {
+                    return $intersection;
+            }
+            my $tmp;
+            if ( defined $parent[$which] and defined $parent[1-$which] ) {
+                $tmp = $parent[$which]->intersection ( $parent[1-$which] );
+            }
+            return @{$self->{last}} = ($intersection, $tmp);
+        },
+    'union' =>
+        sub {
+            my $self = shift;
+            my (@last, @max);
+            my @parent = @{ $self->{parent} };
+            @{$last[0]} = $parent[0]->last;
+            @{$last[1]} = $parent[1]->last;
+            @{$max[0]} = $last[0][0]->max_a;
+            @{$max[1]} = $last[1][0]->max_a;
+            unless ( defined $max[0][0] ) {
+                return @{$last[1]}
+            }
+            unless ( defined $max[1][0] ) {
+                return @{$last[0]}
+            }
+
+            my $which = ($max[0][0] > $max[1][0]) ? 0 : 1;
+            my $last = $last[$which][0];
+            unless (wantarray) {
+                    $self->trace_close( arg => $last ) if $TRACE;
+                    return $last;
+            }
+            # find out the tail
+            my $parent1 = $last[$which][1];
+            # warn $self->{parent}[$which]." - $last = $parent1";
+            my $parent2 = ($max[0][0] == $max[1][0]) ?
+                $self->{parent}[1-$which]->complement($last) :
+                $self->{parent}[1-$which];
+            my $tail;
+            if (( ! defined $parent1 ) || $parent1->is_null) {
+                $tail = $parent2;
+            }
+            else {
+                my $method = $self->{method};
+                $tail = $parent1->$method( $parent2 );
+            }
+            return @{$self->{first}} = ($last, $tail);
+        },
+);  # %_last
+
 # first() could also be called "car" as in Lisp
 # sub car { &first }
 
@@ -506,68 +717,10 @@ sub first {
         # my @parent = $self->min_a;
         my $method = $self->{method};
 
+        return $_first{$method}->($self) if exists $_first{$method};
+
         # warn "getting first of a $method";
         # warn Dumper($self);
-
-        if ($method eq 'complement') {
-
-            # TODO: should look for next "existing" interval,
-            #       instead of the "empty" interval between quantize() elements
-
-            my @parent_min = $self->{parent}->first;
-            unless ( defined $parent_min[0] ) {
-                    $self->trace_close( arg => 'bad parent: undef 0' ) if $TRACE;
-                    return wantarray ? (undef, 0) : undef;
-            }
-
-            # warn "$method parent $self->{parent} first is @parent_min";
-            my $parent_complement;
-            my $first;
-            my @next;
-            my $parent;
-            if ( $parent_min[0]->min == -$inf ) {
-                my @parent_second = $parent_min[1]->first;
-                #    (-inf..min)        (second..?)
-                #            (min..second)   = complement
-                # warn "$method second is @parent_second";
-                $first = $self->new( $parent_min[0]->complement );
-                $first->{list}[0]{b} = $parent_second[0]->{list}[0]{a};
-                $first->{list}[0]{open_end} = ! $parent_second[0]->{list}[0]{open_begin};
-                @{ $first->{list} } = () if 
-                    ( $first->{list}[0]{a} == $first->{list}[0]{b}) && 
-                        ( $first->{list}[0]{open_begin} ||
-                          $first->{list}[0]{open_end} );
-                @next = $parent_second[0]->max_a;
-                $parent = $parent_second[1];
-                # warn "$method second first $first next @next";
-            }
-            else {
-                #            (min..?)
-                #    (-inf..min)        = complement
-                $parent_complement = $parent_min[0]->complement;
-                # warn "$method first is $parent_complement";
-                $first = $self->new( $parent_complement->{list}[0] );
-                @next = $parent_min[0]->max_a;
-                $parent = $parent_min[1];
-            }
-            unless (wantarray) {
-                $self->trace_close( arg => $first ) if $TRACE;
-                return $first;
-            }
-
-            # carp "first-tail not defined for method '$method'";
-            # warn "tail starts in ". $parent_min[0]->max;
-            my @no_tail = $self->new(-$inf,$next[0]);
-            $no_tail[0]->{list}[0]{open_end} = $next[1];
-            # warn "tail complement @no_tail";
-
-            # TODO: change to: compl(p union n_t)
-            # my $tail = $parent_min[1]->complement->complement($no_tail[0]);
-            my $tail = $parent->union($no_tail[0])->complement;  
-            # warn "tail $tail";
-            $self->trace_close( arg => "$first $tail" ) if $TRACE;
-            return @{$self->{first}} = ($first, $tail);
-        }  # end: first-complement
 
         if ($method eq 'intersection') {
             my @parent = @{ $self->{parent} };
@@ -760,187 +913,7 @@ sub last {
     if ( $self->{too_complex} ) {
         my $method = $self->{method};
 
-        if ($method eq 'complement') {
-            my @parent_max = $self->{parent}->last;
-            unless ( defined $parent_max[0] ) {
-                $self->trace_close( arg => 'bad parent: undef 0' ) if $TRACE;
-                return wantarray ? (undef, 0) : undef;
-            }
-            my $parent_complement;
-            my $last;
-            my @next;
-            my $parent;
-            if ( $parent_max[0]->max == $inf ) {
-                #    (inf..min)        (second..?) = parent
-                #            (min..second)         = complement
-                my @parent_second = $parent_max[1]->last;
-                $last = $self->new( $parent_max[0]->complement );
-                $last->{list}[0]{a} = $parent_second[0]->{list}[0]{b};
-                $last->{list}[0]{open_begin} = ! $parent_second[0]->{list}[0]{open_end};
-                @{ $last->{list} } = () if
-                    ( $last->{list}[0]{a} == $last->{list}[0]{b}) &&
-                        ( $last->{list}[0]{open_end} ||
-                          $last->{list}[0]{open_begin} );
-                @next = $parent_second[0]->min_a;
-                $parent = $parent_second[1];
-            }
-            else {
-                #            (min..?)
-                #    (-inf..min)        = complement
-                $parent_complement = $parent_max[0]->complement;
-                $last = $self->new( $parent_complement->{list}[-1] );
-                @next = $parent_max[0]->min_a;
-                $parent = $parent_max[1];
-            }
-            unless (wantarray) {
-                $self->trace_close( arg => $last ) if $TRACE;
-                return $last;
-            }
-            my @no_tail = $self->new($next[0], $inf);
-            $no_tail[0]->{list}[-1]{open_begin} = $next[1];
-            my $tail = $parent->union($no_tail[-1])->complement;
-            $self->trace_close( arg => "$last $tail" ) if $TRACE;
-            return @{$self->{last}} = ($last, $tail);
-        }
-
-        if ($method eq 'intersection') {
-            my @parent = @{ $self->{parent} };
-            # TODO: check max1/max2 for undef
-
-            my $retry_count = 0;
-            my (@last, @max, $which, $last1, $intersection);
-
-            SEARCH: while ($retry_count++ < $max_intersection_depth) {
-                return undef unless defined $parent[0];
-                return undef unless defined $parent[1];
-
-                @{$last[0]} = $parent[0]->last;
-                @{$last[1]} = $parent[1]->last;
-                $self->trace( title=>"trying #$retry_count: $last[0][0] -- $last[1][0]" ) if $TRACE;
-                # warn "last trying #$retry_count: $last[0][0] -- $last[1][0]" ;
-                unless ( defined $last[0][0] ) {
-                    # warn "don't know last of $method";
-                    $self->trace_close( arg => 'undef' ) if $TRACE;
-                    return undef;
-                }
-                unless ( defined $last[1][0] ) {
-                    # warn "don't know last of $method";
-                    $self->trace_close( arg => 'undef' ) if $TRACE;
-                    return undef;
-                }
-                @{$max[0]} = $last[0][0]->max_a;
-                @{$max[1]} = $last[1][0]->max_a;
-                unless ( defined $max[0][0] && defined $max[1][0] ) {
-                    $self->trace( title=>"can't find max()" ) if $TRACE;
-                    $self->trace_close( arg => 'undef' ) if $TRACE;
-                    return undef;
-                }
-
-                # $which is the index to the smaller "last".
-                $which = ($max[0][0] > $max[1][0]) ? 1 : 0;
-
-                for my $which1 ( $which, 1 - $which ) {
-
-                  my $tmp_parent = $parent[$which1];
-                  ($last1, $parent[$which1]) = @{ $last[$which1] };
-                  # warn "ref ". ref($last1);
-                  if ( $last1->is_null ) {
-                    # warn "first1 empty! count $retry_count";
-                    # trace_close;
-                    # return $first1, undef;
-                    $which = $which1;
-                    $intersection = $last1;
-                    last SEARCH;
-                  }
-                  $intersection = $last1->intersection( $parent[1-$which1] );
-
-                  # warn "last intersection with $last1 is $intersection [$which1]";
-
-                  # $TRACE = 0;
-                  unless ( $intersection->is_null ) {
-                    # $self->trace( title=>"got an intersection" );
-                    if ( $intersection->is_too_complex ) {
-                        $self->trace( title=>"got a too_complex intersection" ); 
-                        # warn "too complex intersection";
-                        $parent[$which1] = $tmp_parent;
-                    }
-                    else {
-                        $self->trace( title=>"got an intersection" );
-                        $which = $which1;
-                        last SEARCH;
-                    }
-                  };
-
-                }
-
-                $self->trace( title=>"next try" );
-            }
-            $self->trace( title=>"exit loop" );
-            if ( $intersection->is_null ) {
-                $self->trace( title=> "got no intersection so far" );
-            }
-
-            if ( $#{ $intersection->{list} } > 0 ) {
-                my $tail;
-                ($intersection, $tail) = $intersection->last;
-                $parent[$which] = $parent[$which]->union( $tail );
-                # TODO: remove $intersection from [1-$which]
-            }
-            unless (wantarray) {
-                    $self->trace_close( arg => $intersection ) if $TRACE;
-                    return $intersection;
-            }
-            my $tmp;
-            if ( defined $parent[$which] and defined $parent[1-$which] ) {
-                $tmp = $parent[$which]->intersection ( $parent[1-$which] );
-            }
-            $self->trace_close( arg => "$intersection ". (defined $tmp ? "$tmp"
-: "") ) if $TRACE;
-            return @{$self->{last}} = ($intersection, $tmp);
-        }
-
-        if ($method eq 'union') {
-            my (@last, @max);
-            my @parent = @{ $self->{parent} };
-            @{$last[0]} = $parent[0]->last;
-            @{$last[1]} = $parent[1]->last;
-            @{$max[0]} = $last[0][0]->max_a;
-            @{$max[1]} = $last[1][0]->max_a;
-
-            # check max1/max2 for undef
-            unless ( defined $max[0][0] ) {
-                $self->trace_close( arg => "@{$last[1]}" ) if $TRACE;
-                return @{$last[1]}
-            }
-            unless ( defined $max[1][0] ) {
-                $self->trace_close( arg => "@{$last[0]}" ) if $TRACE;
-                return @{$last[0]}
-            }
-
-            my $which = ($max[0][0] > $max[1][0]) ? 0 : 1;
-            my $last = $last[$which][0];
-            # return $last unless wantarray;
-            unless (wantarray) {
-                    $self->trace_close( arg => $last ) if $TRACE;
-                    return $last;
-            }
-            # find out the tail
-            my $parent1 = $last[$which][1];
-            # warn $self->{parent}[$which]." - $last = $parent1";
-            my $parent2 = ($max[0][0] == $max[1][0]) ?
-                $self->{parent}[1-$which]->complement($last) :
-                $self->{parent}[1-$which];
-            my $tail;
-            if (( ! defined $parent1 ) || $parent1->is_null) {
-                # warn "union parent1 tail is null";
-                $tail = $parent2;
-            }
-            else {
-                $tail = $parent1->$method( $parent2 );
-            }
-            $self->trace_close( arg => "$last $tail" ) if $TRACE;
-            return @{$self->{first}} = ($last, $tail);
-        }
+        return $_last{$method}->($self) if exists $_last{$method};
 
         # 'quantize', 'select', 'recur_by_rule', 'offset', 'iterate'
         # last() doesn't know how to do $method-last, 
