@@ -1037,13 +1037,8 @@ sub _backtrack {
 
 sub intersects {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) { 
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
+    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
+
     $a1->trace(title=>"intersects");
     if ($a1->{too_complex}) {
         $a1 = $a1->_backtrack('intersection', $b1);
@@ -1071,13 +1066,8 @@ sub iterate {
 
 sub intersection {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) {
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
+    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
+
     $a1->trace_open(title=>"intersection", arg => $b1) if $TRACE;
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         my $arg0 = $a1->_quantize_span;
@@ -1104,13 +1094,7 @@ sub intersection {
 
 sub intersected_spans {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) {
-        $b1 = shift;
-    }
-    else {
-        $b1 = $a1->new(@_);
-    }
+    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
 
     # try to simplify $b1
     $b1 = $b1->intersection( $a1 )
@@ -1142,40 +1126,30 @@ sub intersected_spans {
 
 
 sub complement {
-    my $self = shift;
+    my $a1 = shift;
     # do we have a parameter?
     if (@_) {
-        my $a1;
-        if (ref ($_[0]) eq ref($self) ) {
-            $a1 = shift;
-        } 
-        else {
-            $a1 = $self->new(@_);  
-        }
-        $self->trace_open(title=>"complement", arg => $a1) if $TRACE;
-        $a1 = $a1->complement;
-        my $tmp =$self->intersection($a1);
-        $self->trace_close( arg => $tmp ) if $TRACE;
+        my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
+
+        $a1->trace_open(title=>"complement", arg => $b1) if $TRACE;
+        $b1 = $b1->complement;
+        my $tmp =$a1->intersection($b1);
+        $a1->trace_close( arg => $tmp ) if $TRACE;
         return $tmp;
     }
-    $self->trace_open(title=>"complement") if $TRACE;
-    if ($self->{too_complex}) {
-        $self->trace_close( ) if $TRACE;
-        return $self->_function( 'complement', @_ );
+    $a1->trace_open(title=>"complement") if $TRACE;
+    if ($a1->{too_complex}) {
+        $a1->trace_close( ) if $TRACE;
+        return $a1->_function( 'complement', @_ );
     }
-    return $self->SUPER::complement;
+    return $a1->SUPER::complement;
 }
 
 
 sub until {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) {
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
+    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
+
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         return $a1->_function2( 'until', $b1 );
     }
@@ -1185,13 +1159,8 @@ sub until {
 
 sub union {
     my $a1 = shift;
-    my $b1;
-    if (ref ($_[0]) eq ref($a1) ) {
-        $b1 = shift;
-    } 
-    else {
-        $b1 = $a1->new(@_);  
-    }
+    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);  
+    
     $a1->trace_open(title=>"union", arg => $b1) if $TRACE;
     if (($a1->{too_complex}) or ($b1->{too_complex})) {
         $a1->trace_close( ) if $TRACE;
@@ -1213,7 +1182,7 @@ sub contains {
     $a1->trace_open(title=>"contains") if $TRACE;
     if ( $a1->{too_complex} ) { 
         # we use intersection because it is better for backtracking
-        my $b0 = (ref $_[0] eq ref $a1) ? $_[0] : $a1->new(@_);
+        my $b0 = (ref $_[0] eq ref $a1) ? shift : $a1->new(@_);
         my $b1 = $a1->intersection($b0);
         if ( $b1->{too_complex} ) {
             $b1->trace_close( arg => 'undef' ) if $TRACE;

@@ -1,10 +1,13 @@
 Set::Infinite TODO 
 
-- document "separators" - use example from t/infinite.t
+- document the "separators" method - use example from t/infinite.t
 
 - quantize() should use "iterate"
+  (unless this breaks _quantize_span)
+  Find out how to unify "quantize" and the "_recurrence" module (DT::Set)
 
 - spaceship should return "undef" if the sets can't be compared.
+- "contains" should test the result of "==" for undef.
 
 - test new methods
 
@@ -14,6 +17,7 @@ Set::Infinite TODO
 
 - Deprecate min_a()
   min() should check "wantarray", instead.
+  This can generate confusion in some cases - verify this.
 
 - New methods: map / grep
   From a discussion with Andrew Pimlott and Dave Rolsky
