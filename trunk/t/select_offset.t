@@ -44,7 +44,7 @@ use Set::Infinite;
 # use Set::Infinite::Quantize;
 
 
-print "1..9\n";
+print "1..8\n";
 
 #print "1: \n";
 $a = Set::Infinite->new([1,3],[30,40]);
@@ -53,9 +53,9 @@ test ( "Joined array: ", ' join ("", $a->quantize ) ',
 test ( "Union with object: ", ' $a->quantize( quant => 2 )->union(9,10) ',
  "[0..4),[9..10],[30..42)");
 
-$a = Set::Infinite->new([1],[4],[6],[7]);
-test ( '', ' $a->select( freq => 2 )->union() ',
-  "1,6");
+#$a = Set::Infinite->new([1],[4],[6],[7]);
+#test ( '', ' $a->select( freq => 2 )->union() ',
+#  "1,6");
 
 # NOTE: no longer passes this test since quantize() removes 'undef' values
 # $a = Set::Infinite->new([1,4],[6,7]);

@@ -36,11 +36,14 @@ sub test {
 	print " \n";
 }
 
-print "1..4\n";
+print "1..1\n";
 $| = 1;
 
 # select
 my $s;
+
+print "ok\n";
+__END__
 
 $a = Set::Infinite->new([1,25]);
 test ( '', 

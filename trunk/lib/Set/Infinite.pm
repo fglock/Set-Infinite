@@ -38,7 +38,7 @@ sub compact { @_ }
 use vars qw( $trace_level %level_title );
 
 BEGIN {
-    $VERSION = 0.5301;
+    $VERSION = 0.5302;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -289,183 +289,103 @@ sub quantize {
 }
 
 
-# select: position-based selection of subsets
+sub _first_n {
+    my $self = shift;
+    my $n = shift;
+    my $tail = $self->copy;
+    my @result;
+    my $first;
+    for ( 1 .. $n )
+    {
+        ( $first, $tail ) = $tail->first if $tail;
+        push @result, $first;
+    }
+    return $tail, @result;
+}
+
+sub _last_n {
+    my $self = shift;
+    my $n = shift;
+    my $tail = $self->copy;
+    my @result;
+    my $last;
+    for ( 1 .. $n )
+    {
+        ( $last, $tail ) = $tail->last if $tail;
+        unshift @result, $last;
+    }
+    return $tail, @result;
+}
+
 
 sub select {
     my $self = shift;
     $self->trace_open(title=>"select") if $TRACE;
 
-    # pre-process parameters
     my %param = @_;
-    #       freq     - default=parent size, or "1" if we have a count
-    #       by       - default=[0]
-    #       count    - default=infinite
-    my $res = $self->new();
-    my $max = 1 + $#{ $self->{list} };
+    die "select() - parameter 'freq' is deprecated" if exists $param{freq};
 
-    my ($freq, $count);
-
-    $param{count} = $inf if exists $param{freq} and ! exists $param{count};
-
-    $freq =  exists $param{freq}  ? $param{freq} :
-             exists $param{count} ? 1 : $max;
-    $freq *= $param{interval} if exists $param{interval};  # obsolete
-    my @by = exists $param{by}    ? @{ $param{by} } : (0);
-    $count = exists $param{count} ? $param{count} : $inf;
-
-    # warn "select: freq=$freq count=$count by=[@by]";
+    my $res;
+    my $count;
+    my @by;
+    @by = @{ $param{by} } if exists $param{by}; 
+    $count = delete $param{count} || $inf;
+    # warn "select: count=$count by=[@by]";
 
     if ($count <= 0) {
         $self->trace_close( arg => $res ) if $TRACE;
-        return $res;
+        return $self->new();
     }
 
-    my @min = $self->min_a;
-    my @max = $self->max_a;
-
-    if ($self->{too_complex}) {
-        $res = $self->_function( 'select', @_ );
-
-        # TODO: find out how to calculate 'last' 
-        $res->{last} = [ undef, 0 ];
-
-        # conditions for "definition"/boundedness: 
-        # - freq, count, min [. . .
-        # - positive by, min [.. . 
-        # - freq, count, by, min [.. .  .. .
-        # - negative by and max   .. .]
-
-        # carp "testing select too_complex ". $self->span;
-
-        # my @min = $self->min_a;
-        # my @max = $self->max_a;
-        if ( defined $min[0] and ($min[0] != $neg_inf) ) {
-            # warn "select is complex but defineable: min=".$self->min_a ." count=$count freq=$freq";
-            # carp " testing select min...";
-            # my %param = @_;
-            # my @by = exists $param{by} ? @{ $param{by} } : (0);
-            my @by1 = sort @by;
-            # TODO: @by *can* be negative!
-            if ( ($by1[0] >= 0) or (exists $param{freq} and exists $param{count}) ) {
-                # carp "select might be defineable - min = ".$self->min_a;
-                # my @first = $self->first;
-                # warn "select-first = $first[0]";
-
-                my $result = $self->new()->_no_cleanup;
-                my $tail = $self;
-                # my $index = 0;
-                my @first;
-
-                # TODO: freq / count
-            GET_SOME:
-                my $index = 0;
-                for (my $pos = 0; ; $pos++) {
-
-                    if ($freq > 1 and $freq < $inf) {
-                        if ($pos >= $freq) { 
-                            # warn "pos >= freq  $pos >= $freq";
-                            last;
-                        }
-                    }
-                    else {
-                        if ($index > $#by1) { 
-                            # warn "index > by1  $index > $#by1";
-                            last;
-                        }
-                    }
-
-                    # warn "select: get from tail";
-                    @first = $tail->first;
-                    # warn "selecting: @first index=$index pos=$pos freq=$freq count=$count";
-                    if (($index <= $#by1) && ($by1[$index] == $pos)) {
-                        push @{ $result->{list} }, @{ $first[0]->{list} } if defined $first[0];
-                        # carp "    push $first[0] ". $first[0]->{list}[0];
-                        $index++;
-                    }
-                    $tail = $first[1];
-                    last unless defined $tail;
-                }
-                # warn "result of quantize @by1 is $result, tail is ".$tail->min."..., count is $count";
-                $param{count} --;
-                if ($param{count} != $inf) {
-                    # warn "select: count is not infinite: count=$param{count} got $result tail=$tail";
-                    # $index = 0;
-                    goto GET_SOME if $param{count} > 0;
-                }
-                if ($param{count} > 0) {
-                    # warn "select: return union result $result and tail $tail count=$param{count}";
-                    # $result = $result->union( $tail->select(%param) );
-                    #### ??? $res =  $self->_function( 'select', %param );
-                    # $tail = $tail->_function( 'select', %param );
-                    my @first = $result->first;
-                    # warn "res=$res first=@first tail=$tail";
-                    my $union;
-                    if (defined $first[1]) {
-                        # TODO: save $tail->select->min, so that it doesn't try to re-evaluate to find union->first
-                        # @tail_min = $tail_min; ???
-                        $union = $tail->
-                            _function( 'select', %param )->
-                            _function2( 'union', $first[1] );
-                    }
-                    else {
-                        $union = $tail->_function( 'select', %param );
-                    }
-                    # warn "    union = $union";
-                    # setup min/first cache
-                    $res->{first} = [$first[0], $union];            
-                    # warn "TODO: setup first cache";
-                    $self->trace_close( arg => $res ) if $TRACE;
-                    return $res;
-                }
-                # warn "select: return $result and no tail";
-                $self->trace_close( arg => $result ) if $TRACE;
-                return $result;
+    my @set;
+    my $tail;
+    my $first;
+    my $last;
+    if ( @by ) 
+    {
+            my ( @pos_by, @neg_by );
+            for ( @by ) {
+                ( $_ < 0 ) ? push @neg_by, $_ :
+                             push @pos_by, $_;
             }
-        }
-        elsif ( defined $max[0] and ($max[0] != $inf) ) {
-            # carp " testing select max...";
-            my %param = @_;
-            my @by = exists $param{by} ? @{ $param{by} } : (0);
-            my @by1 = sort @by;
-            if ( ($by1[-1] < 0) and not (exists $param{freq} or exists $param{count}) ) {
-                # carp "select might be defineable - max = ".$self->max." and by = @by";
-                # TODO: find out what '100' should be
-                # warn $b->intersection($self->max - 100, $self->max);
+
+            $first = $self->new();
+            $first->{cant_cleanup} = 1;
+            if ( @pos_by ) {
+                @pos_by = sort { $a <=> $b } @pos_by;
+                ( $tail, @set ) = $self->_first_n( 1 + $pos_by[-1] );
+                my @selected = @set[ @pos_by ];
+                push @{$first->{list}}, $_->{list}[0] for @selected;
             }
-        }
 
-        $self->trace_close( arg => $res ) if $TRACE;
-        return $res;
+            $last = $self->new();
+            $last->{cant_cleanup} = 1;
+            if ( @neg_by ) {
+                @neg_by = sort { $a <=> $b } @neg_by;
+                ( $tail, @set ) = $self->_last_n( - $neg_by[0] );
+                my @selected = @set[ @neg_by ];
+                push @{$last->{list}}, $_->{list}[0] for @selected;
+            }
+
+            # TODO: use 'push' instead of 'union'
+            $res = $first->union( $last );
+    }
+    else
+    {
+            $res = $self;
     }
 
-    unless ($max) {
-        $self->trace_close( arg => $res ) if $TRACE;
-        return $res;   # empty parent
+    return $res if $count == $inf;
+    my $count_set = $self->new();
+    $count_set->{cant_cleanup} = 1;
+    while ( $res ) {
+            ( $first, $res ) = $res->first;
+            last unless $first;
+            push @{$count_set->{list}}, $first->{list}[0];
+            $count--;
+            last if $count == 0;
     }
-
-    my $n = 0;
-    my ($base, $pos);
-    my %selection;
-    while ( $n < $count ) {
-        $base = $n * $freq;
-        for (@by) {
-            $pos = $base + $_;
-            $selection{$pos} = 1 unless ($pos < 0) or ($pos >= $max);
-        }
-        $n++;
-        last if $base >= $max;
-    }
-
-    my $tmp;
-    my @keys = sort { $a <=> $b } keys %selection;
-
-    foreach (@keys) {
-        $tmp = $self->{list}[$_];
-        push @{$res->{list}}, $tmp;
-    }
-    $res->{cant_cleanup} = 1; 
-    $self->trace_close( arg => $res ) if $TRACE;
-    return $res;
+    return $count_set;
 }
 
 
@@ -1789,22 +1709,16 @@ Note: this function is still experimental.
 
     select( parameters )
 
-        Selects set members based on their ordered positions
-        (Selection is more useful after quantization).
+Selects set members based on their ordered positions
 
-            freq     - default=1
-            by       - default=[0]
+C<select> has a behaviour similar to an array C<slice>.
+
+            by       - default=All
             count    - default=Infinity
 
- 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15    # [0..15] quantized by "1"
-
- 0              5             10             15    # freq => 5
-
-    1     3        6     8       11    13          # freq => 5, by => [ -2, 1 ]
-
-    1     3        6     8                         # freq => 5, by => [ -2, 1 ], count => 2
-
-    1                                     14       # by => [ -2, 1 ]
+ 0  1  2  3  4  5  6  7  8      # original set
+ 0  1  2                        # count => 3 
+    1              6            # by => [ -2, 1 ]
 
 =head2 offset
 

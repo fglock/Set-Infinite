@@ -1,5 +1,11 @@
 Revision history for Perl extension Set::Infinite.
 
+0.5302
+    select( freq => $n ) is deprecated. 
+    - It was never used, and the implementation was broken.
+    select( by => [] ) default is changed to 'All'.
+    - in order to have the same behaviour as when 'freq' was omitted.
+
 0.5301
     refactored methods: min, max, first, last, until, iterate, offset
     removed obsolete method: compact

@@ -9,7 +9,7 @@ Set::Infinite TODO
 
     - a set with min == inf or max = -inf is an error!
 
-    - implement last of select, quantize; enable tests!
+    - implement last of quantize
 
     - tests for iterate min/max/first
 
@@ -23,15 +23,7 @@ Set::Infinite TODO
 
     - change "link to self" to "link to copy" in first()
 
-    - finish last()
-      until, select
-
-    - finish select/first defined "boundedness" for negative by
-      and tests for negative by
-
     - document first()
-
-    - test min/max after select()
 
     - give more standard names to Arithmetic.pm variables
 
@@ -52,7 +44,6 @@ Set::Infinite TODO
 BACKTRACK
 
     backtrack.t:
-        - test max/min after select
 
 	make backtrack_result method
 
@@ -62,8 +53,6 @@ BACKTRACK
 		no_cleanup
 
 	change $backtrack_arg2 = $arg->quantize(@param)->union(); to span()
-
-	backtracking select - see '	# (TODO) ???? ' in Infinite.pm, backtrack.t
 
 	backtracking: should be extensible. Use tables instead of if-else
 	backtracking: change ->{method} to sub-pointer instead of string ?
@@ -81,8 +70,6 @@ BACKTRACK
 		-- check if this is really necessary!
 		-- try using span, or create result directly (faster)
 		-- or: use 'offset' instead
-	backtracking select should move up and down values, according to 'by' limits.
-	See: backtrack.t in 'partially null "date"'
     test finding out min/max of integer open sets (see backtrack.t tests 2,3)
 
 	backtracking: document backtracking resolution; document internal object data (partially done)
@@ -94,8 +81,7 @@ SYNTAX
 
 	sort by[] -- 0 1 2 ... freq-3 freq-2 freq-1
 
-	'select' switch for negative-index overflow behaviour (end of subset, or end of freq)
-	tests: add test for negative 'by'
+	'select' tests: add test for positive+negative 'by'
 
 	old: correct syntax problems due to accepting ( [ 1 .. 10 ] ) as input - see POD.
 
@@ -159,7 +145,7 @@ OTHER
 
 	find a better (bigger span) gmtime/timegm
 
-	check for negative-epoch errors (quantize, select, offset).
+	check for negative-epoch errors (quantize, offset).
 
 	remove a lot of debug #-print lines
 
