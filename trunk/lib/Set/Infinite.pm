@@ -1351,17 +1351,6 @@ sub contains {
 
 
 my %_min = (
-    'iterate' => 
-            sub {
-                my ($self) = shift;
-                my @parent = $self->{parent}->min_a;
-                unless (defined $parent[0]) {
-                    return @{$self->{min}} = @parent;  # undef
-                }
-                my $min = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
-                @parent = $min->min_a;
-                return @{$self->{min}} = @parent;
-            },
     'complement' =>
             sub {
                 my ($self) = shift;
@@ -1397,40 +1386,10 @@ my %_min = (
                 }
                 return @{$self->{min}} = $p1[0] < $p2[0] ? @p1 : @p2;
             },
-    intersection =>
-            sub {
-                my ($self) = shift;
-                my @first = $self->first;
-                unless (defined $first[0]) {
-                    return @{$self->{min}} = (undef, 0);
-                }
-                my @min = $first[0]->min_a;
-                return @{$self->{min}} = @min;
-            },
-    quantize => 
-            sub {
-                my ($self) = shift;
-                my @first = $self->first;
-                unless (defined $first[0]) {
-                    return @{$self->{min}} = (undef, 0);
-                }
-                my @min = $first[0]->min_a;
-                return @{$self->{min}} = @min;
-            },
 ); # %_min
 
+
 my %_max = (
-    'iterate' =>
-            sub {
-                my ($self) = shift;
-                my @parent = $self->{parent}->max_a;
-                unless (defined $parent[0]) {
-                    return @{$self->{max}} = @parent;  # undef
-                }
-                my $max = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
-                @parent = $max->max_a;
-                return @{$self->{max}} = @parent;
-            },
     'complement' =>
             sub {
                 my ($self) = shift;
@@ -1461,60 +1420,41 @@ my %_max = (
                 }
                 return @{$self->{max}} = $p1[0] > $p2[0] ? @p1 : @p2;
             },
-    'intersection' =>
-            sub {
-                my ($self) = shift;
-                my @p1 = $self->{parent}[0]->max_a;
-                unless (defined $p1[0]) {
-                    return @{$self->{max}} = @p1;
-                }
-                my @p2 = $self->{parent}[1]->max_a;
-                unless (defined $p2[0]) {
-                    return @{$self->{max}} = @p2;
-                }
-                if ($p1[0] == $p2[0]) {
-                    $p1[1] = $p1[1] ? $p1[1] : $p1[0];
-                    return @{$self->{max}} = @p1;
-                }
-                return @{$self->{max}} = $p1[0] < $p2[0] ? @p1 : @p2;
-            },
-    quantize =>
-            sub {
-                my ($self) = shift;
-                my @last = $self->last;
-                unless (defined $last[0]) {
-                    return @{$self->{max}} = (undef, 0);
-                }
-                my @max = $last[0]->max_a;
-                return @{$self->{max}} = @max;
-            },
 ); # %_max
+
 
 sub min_a { 
     my ($self) = shift;
     if (exists $self->{min} ) {
         return @{$self->{min}};
     }
-    $self->trace_open(title=>"min_a") if $TRACE; 
+    # $self->trace_open(title=>"min_a") if $TRACE; 
     if ($self->{too_complex}) {
         my $method = $self->{method};
 
         return $_min{$method}->($self) if exists $_min{$method};
 
-        if ( ref $self->{parent} ne 'ARRAY' ) {
-
-            my @first = $self->{parent}->first;
-            unless (defined $first[0]) {
-                $self->trace_close( arg => "undef 0" ) if $TRACE;
-                return @{$self->{min}} = (undef, 0);
+        if ( ref $self->{parent} eq 'ARRAY' ) {
+            my @first = $self->first;
+            if (defined $first[0]) {
+                return @{$self->{min}} = $first[0]->min_a;
             }
-            my @min = $first[0]->min_a;
-            $self->trace_close( arg => "@min" ) if $TRACE;
-            return @{$self->{min}} = @min;
-
         }
+        else {
+            my @first = $self->{parent}->first;
+            # warn "min_a( $method ) first=".$first[0];
+            if ( defined $first[0] ) {
+                my $set = $first[0]->$method( @{$self->{param}} );
+                my @set_first = $set->first;
+                # warn "new max_a( $method ) first=".$set_first[0];
+                if ( defined $set_first[0] ) {
+                    return @{$self->{min}} = $set_first[0]->min_a;
+                }
+            }
+        }
+        return @{$self->{min}} = (undef, 0);
     }
-    $self->trace_close( arg => 'SUPER' ) if $TRACE;
+    # $self->trace_close( arg => 'SUPER' ) if $TRACE;
     return $self->SUPER::min_a;
 };
 
@@ -1522,60 +1462,33 @@ sub min_a {
 sub max_a { 
     my ($self) = shift;
     return @{$self->{max}} if exists $self->{max};
-    $self->trace_open(title=>"max_a") if $TRACE; 
+    # $self->trace_open(title=>"max_a") if $TRACE; 
     if ($self->{too_complex}) {
         my $method = $self->{method};
 
         return $_max{$method}->($self) if exists $_max{$method};
 
-        if ( ref $self->{parent} ne 'ARRAY' ) {
-
-            my @parent = $self->{parent}->max_a;
-            unless (defined $parent[0]) {
-                $self->trace_close( arg => "undef" ) if $TRACE;
-                return @{$self->{max}} = @parent;
+        if ( ref $self->{parent} eq 'ARRAY' ) {
+            my @last = $self->last;
+            if (defined $last[0]) {
+                return @{$self->{max}} = $last[0]->max_a;
             }
-
-            my $tmp = $parent[0];
-            if ( ($tmp == $inf) or ($tmp == $neg_inf) ) {
-                $self->trace_close( arg => "$tmp 1" ) if $TRACE;
-                return @{$self->{max}} = ($tmp, 1);
-            }
-
-            $self->trace( title=>"creating sample for $method" ) if $TRACE;
-            my $sample;
-
-            # TODO: this is a Date::Set hack
-            #  - we shouldn't know about recur_by_rule here
-            if ( $method eq 'recur_by_rule' ) {
-                my %param = @{$self->{param}};
-                $self->trace( title=>"freq = ".$param{FREQ} ) if $method eq 'recur_by_rule';
-                my %FREQ = (
-    SECONDLY => 'seconds',
-    MINUTELY => 'minutes',
-    HOURLY   => 'hours',
-    DAILY    => 'days',
-    WEEKLY   => 'weeks',
-    MONTHLY  => 'months',
-    YEARLY   => 'years'
-                );
-                $sample = $self->new($tmp)->quantize( unit=>$FREQ{$param{FREQ}} );
-            } 
-            # END_HACK
-            else {
-                $sample = { a => $tmp - 1 - $self->{tolerance}, 
-                     b => $tmp,
-                     open_begin => 0, 
-                     open_end => $parent[1] };
-            }
-
-            # print " tol=",$self->{tolerance}," max=$tmp open=$parent[1]\n";
-            @{$self->{max}} = $self->new( $sample )->$method( @{$self->{param}} )->max_a;
-            $self->trace_close( arg => "@{$self->{max}}" ) if $TRACE;
-            return @{$self->{max}} ;
         }
+        else {
+            my @last = $self->{parent}->last;
+            # warn "max_a( $method ) last=".$last[0];
+            if ( defined $last[0] ) {
+                my $set = $last[0]->$method( @{$self->{param}} );
+                my @set_last = $set->last;
+                # warn "new max_a( $method ) last=".$set_last[0];
+                if ( defined $set_last[0] ) {
+                    return @{$self->{max}} = $set_last[0]->max_a;
+                }
+            }
+        }
+        return @{$self->{max}} = (undef, 0);
     }
-    $self->trace_close( arg => "SUPER" ) if $TRACE;
+    # $self->trace_close( arg => "SUPER" ) if $TRACE;
     return $self->SUPER::max_a;
 };
 
