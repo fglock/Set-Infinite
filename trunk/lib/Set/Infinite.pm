@@ -16,6 +16,7 @@ use Carp;
 
 use vars qw( @ISA @EXPORT_OK @EXPORT $VERSION 
     $TRACE $DEBUG_BT $PRETTY_PRINT $inf $minus_inf $neg_inf 
+    %_first %_last
     $too_complex $backtrack_depth 
     $max_backtrack_depth $max_intersection_depth
     $trace_level %level_title );
@@ -45,7 +46,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = 0.5304;
+    $VERSION = 0.5305;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -318,8 +319,8 @@ sub select {
     return $count_set;
 }
 
-
-my %_first = (
+BEGIN {
+  %_first = (
     'complement' =>
         sub {
             my $self = $_[0];
@@ -533,9 +534,9 @@ my %_first = (
             $tail  = $tail->tolerance( @{$self->{param}} );
             return ($first, $tail);
         },
-);  # %_first
+  );  # %_first
 
-my %_last = (
+  %_last = (
     'complement' =>
         sub {
             my $self = $_[0];
@@ -748,8 +749,8 @@ my %_last = (
             $tail  = $tail->tolerance( @{$self->{param}} );
             return ($last, $tail);
         },
-);  # %_last
-
+  );  # %_last
+} # BEGIN
 
 sub first {
     my $self = $_[0];
@@ -757,6 +758,7 @@ sub first {
         $self->trace_open(title=>"first") if $TRACE;
         if ( $self->{too_complex} ) {
             my $method = $self->{method};
+            # warn "method $method ". ( exists $_first{$method} ? "exists" : "does not exist" );
             if ( exists $_first{$method} ) {
                 @{$self->{first}} = $_first{$method}->($self);
             }
