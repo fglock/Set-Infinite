@@ -20,12 +20,7 @@ Set::Infinite TODO
 
     - backtrack code to 'offset' is a hack - fix it.
 
-    - verify and fix: change "link to self" to "link to copy" in first()
-
     - document first()
-
-    - size() is wrong for open, "integer" sets.
-      test!
 
     - find out how to compare "<=>" unbounded sets
     - try using first() in intersects() and "<=>"
@@ -38,6 +33,8 @@ BACKTRACK
 		iterate
 		compact
 		no_cleanup
+                tolerance
+                complement
 
 	change $backtrack_arg2 = $arg->quantize(@param)->union(); to span()
 
@@ -55,7 +52,7 @@ BACKTRACK
 
         test finding out min/max of integer open sets (see backtrack.t tests 2,3)
 
-	backtracking: document backtracking resolution; document internal object data (partially done)
+	backtracking: document backtracking resolution
 
 SYNTAX
 
@@ -76,8 +73,6 @@ SYNTAX
 TESTS
 
         more tests for min/max/span/size on too_complex sets
-
-        tests for complement() backtracking 
 
 	old: fix Bigfloat tests
 

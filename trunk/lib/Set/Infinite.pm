@@ -6,13 +6,11 @@ package Set::Infinite;
 
 require 5.005_03;
 use strict;
-# use warnings;
 
 require Exporter;
 use Set::Infinite::Basic;
     # These methods are inherited from Set::Infinite::Basic "as-is":
-    #   type  list  fixtype  numeric  min  max
-    #   integer  real  new  span  copy
+    #   type list fixtype numeric min max integer real new span copy
 use Carp;
 # use Data::Dumper; 
 
@@ -34,7 +32,6 @@ use overload
 ;
 
 
-# Infinity vars
 $inf            = 100**100**100;
 $neg_inf = $minus_inf  = -$inf;
 
@@ -70,7 +67,6 @@ sub trace { # title=>'aaa'
             "$parm{title} ". $self->copy .
             ( exists $parm{arg} ? " -- " . $parm{arg}->copy : "" ).
             " $caller[1]:$caller[2] ]\n" if $TRACE == 1;
-    print "$parm{title} ",sprintf("%4d", $caller[2])," ]\n" if $TRACE == 2;
     return $self;
 }
 
@@ -78,11 +74,10 @@ sub trace_open {
     return $_[0] unless $TRACE;
     my ($self, %parm) = @_;
     my @caller = caller(1);
-    # my $nothing = "$self";
     print "" . ( ' | ' x $trace_level ) .
             "\\ $parm{title} ". $self->copy .
             ( exists $parm{arg} ? " -- ". $parm{arg}->copy : "" ).
-            " $caller[1]:$caller[2] ]\n" if $TRACE == 1;
+            " $caller[1]:$caller[2] ]\n";
     $trace_level++; 
     $level_title{$trace_level} = $parm{title};
     return $self;
@@ -104,13 +99,12 @@ sub trace_close {
                ) : 
                ""     # no arg 
             ).
-            " $caller[1]:$caller[2] ]\n" if $TRACE == 1;
+            " $caller[1]:$caller[2] ]\n";
     $trace_level--;
     return $self;
 }
 
 
-# internal method
 # creates a 'function' object that can be solved by _backtrack()
 sub _function {
     my ($self, $method) = (shift, shift);
@@ -380,7 +374,7 @@ my %_first = (
             my $self = $_[0];
             my @parent_min = $self->{parent}->first;
             unless ( defined $parent_min[0] ) {
-                    return wantarray ? (undef, 0) : undef;
+                return (undef, 0);
             }
             my $parent_complement;
             my $first;
@@ -408,14 +402,10 @@ my %_first = (
                 @next = $parent_min[0]->max_a;
                 $parent = $parent_min[1];
             }
-            unless (wantarray) {
-                return $first;
-            }
-
             my @no_tail = $self->new($neg_inf,$next[0]);
             $no_tail[0]->{list}[0]{open_end} = $next[1];
             my $tail = $parent->union($no_tail[0])->complement;  
-            return @{$self->{first}} = ($first, $tail);
+            return ($first, $tail);
         },  # end: first-complement
     'intersection' =>
         sub {
@@ -476,14 +466,11 @@ my %_first = (
                 ($intersection, $tail) = $intersection->first;
                 $parent[$which] = $parent[$which]->union( $tail );
             }
-            unless (wantarray) {
-                    return $intersection;
-            }
             my $tmp;
             if ( defined $parent[$which] and defined $parent[1-$which] ) {
                 $tmp = $parent[$which]->intersection ( $parent[1-$which] );
             }
-            return @{$self->{first}} = ($intersection, $tmp);
+            return ($intersection, $tmp);
         }, # end: first-intersection
     'union' =>
         sub {
@@ -511,11 +498,7 @@ my %_first = (
 
             my $which = ($min[0][0] < $min[1][0]) ? 0 : 1;
             my $first = $first[$which][0];
-            # return $first unless wantarray;
-            unless (wantarray) {
-                    $self->trace_close( arg => $first ) if $TRACE;
-                    return $first;
-            }
+
             # find out the tail
             my $parent1 = $first[$which][1];
             # warn $self->{parent}[$which]." - $first = $parent1";
@@ -532,7 +515,7 @@ my %_first = (
                 $tail = $parent1->$method( $parent2 );
             }
             $self->trace_close( arg => "$first $tail" ) if $TRACE;
-            return @{$self->{first}} = ($first, $tail);
+            return ($first, $tail);
         }, # end: first-union
     'iterate' =>
         sub {
@@ -541,7 +524,7 @@ my %_first = (
             my @first = $parent->first;
             $first[0] = $first[0]->iterate( @{$self->{param}} ) if ref($first[0]);
             $first[1] = $first[1]->_function( 'iterate', @{$self->{param}} ) if ref($first[1]);
-            return @{$self->{first}} = @first;
+            return @first;
         },
     'until' =>
         sub {
@@ -565,7 +548,7 @@ my %_first = (
                     $tail = undef;
                 }
             }
-            return @{$self->{first}} = ($first, $tail);
+            return ($first, $tail);
         },
     'offset' =>
         sub {
@@ -573,7 +556,7 @@ my %_first = (
             my ($first, $tail) = $self->{parent}->first;
             $first = $first->offset( @{$self->{param}} );
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
-            return @{$self->{first}} = ($first, $tail);
+            return ($first, $tail);
         },
     'tolerance' =>
         sub {
@@ -581,7 +564,7 @@ my %_first = (
             my ($first, $tail) = $self->{parent}->first;
             $first = $first->tolerance( @{$self->{param}} );
             $tail  = $tail->tolerance( @{$self->{param}} );
-            return @{$self->{first}} = ($first, $tail);
+            return ($first, $tail);
         },
 );  # %_first
 
@@ -591,7 +574,7 @@ my %_last = (
             my $self = $_[0];
             my @parent_max = $self->{parent}->last;
             unless ( defined $parent_max[0] ) {
-                return wantarray ? (undef, 0) : undef;
+                return (undef, 0);
             }
             my $parent_complement;
             my $last;
@@ -619,14 +602,10 @@ my %_last = (
                 @next = $parent_max[0]->min_a;
                 $parent = $parent_max[1];
             }
-            unless (wantarray) {
-                $self->trace_close( arg => $last ) if $TRACE;
-                return $last;
-            }
             my @no_tail = $self->new($next[0], $inf);
             $no_tail[0]->{list}[-1]{open_begin} = $next[1];
             my $tail = $parent->union($no_tail[-1])->complement;
-            return @{$self->{last}} = ($last, $tail);
+            return ($last, $tail);
         },
     'intersection' =>
         sub {
@@ -688,22 +667,16 @@ my %_last = (
                 }
             }
             $self->trace( title=>"exit loop" ) if $TRACE;
-            if ( $intersection->is_null ) {
-                $self->trace( title=> "got no intersection so far" ) if $TRACE;
-            }
             if ( $#{ $intersection->{list} } > 0 ) {
                 my $tail;
                 ($intersection, $tail) = $intersection->last;
                 $parent[$which] = $parent[$which]->union( $tail );
             }
-            unless (wantarray) {
-                    return $intersection;
-            }
             my $tmp;
             if ( defined $parent[$which] and defined $parent[1-$which] ) {
                 $tmp = $parent[$which]->intersection ( $parent[1-$which] );
             }
-            return @{$self->{last}} = ($intersection, $tmp);
+            return ($intersection, $tmp);
         },
     'union' =>
         sub {
@@ -723,10 +696,6 @@ my %_last = (
 
             my $which = ($max[0][0] > $max[1][0]) ? 0 : 1;
             my $last = $last[$which][0];
-            unless (wantarray) {
-                    $self->trace_close( arg => $last ) if $TRACE;
-                    return $last;
-            }
             # find out the tail
             my $parent1 = $last[$which][1];
             # warn $self->{parent}[$which]." - $last = $parent1";
@@ -741,7 +710,7 @@ my %_last = (
                 my $method = $self->{method};
                 $tail = $parent1->$method( $parent2 );
             }
-            return @{$self->{first}} = ($last, $tail);
+            return ($last, $tail);
         },
     'iterate' =>
         sub {
@@ -750,7 +719,7 @@ my %_last = (
             my @last = $parent->last;
             $last[0] = $last[0]->iterate( @{$self->{param}} ) if ref($last[0]);
             $last[1] = $last[1]->_function( 'iterate', @{$self->{param}} ) if ref($last[1]);
-            return @{$self->{last}} = @last;
+            return @last;
         },
     'offset' =>
         sub {
@@ -758,7 +727,7 @@ my %_last = (
             my ($last, $tail) = $self->{parent}->last;
             $last = $last->offset( @{$self->{param}} );
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
-            return @{$self->{last}} = ($last, $tail);
+            return ($last, $tail);
         },
     'tolerance' =>
         sub {
@@ -766,40 +735,52 @@ my %_last = (
             my ($last, $tail) = $self->{parent}->last;
             $last = $last->tolerance( @{$self->{param}} );
             $tail  = $tail->tolerance( @{$self->{param}} );
-            return @{$self->{last}} = ($last, $tail);
+            return ($last, $tail);
         },
 );  # %_last
 
 
 sub first {
     my $self = $_[0];
-    if (exists $self->{first} ) {
-        return wantarray ? @{$self->{first}} : $self->{first}[0];
+    unless ( exists $self->{first} ) {
+        $self->trace_open(title=>"first") if $TRACE;
+        if ( $self->{too_complex} ) {
+            my $method = $self->{method};
+            if ( exists $_first{$method} ) {
+                @{$self->{first}} = $_first{$method}->($self);
+            }
+            else {
+                my $redo = $self->{parent}->$method ( @{ $self->{param} } );
+                @{$self->{first}} = $redo->first;
+            }
+        }
+        else {
+            return $self->SUPER::first;
+        }
     }
-    $self->trace_open(title=>"first") if $TRACE;
-    if ( $self->{too_complex} ) {
-        my $method = $self->{method};
-        return $_first{$method}->($self) if exists $_first{$method};
-        my $redo = $self->{parent}->$method ( @{ $self->{param} } );
-        return @{$self->{first}} = $redo->first;
-    }
-    return $self->SUPER::first;
+    return wantarray ? @{$self->{first}} : $self->{first}[0];
 }
 
 
 sub last {
     my $self = $_[0];
-    if (exists $self->{last} ) {
-        return wantarray ? @{$self->{last}} : $self->{last}[0];
+    unless ( exists $self->{last} ) {
+        $self->trace(title=>"last") if $TRACE;
+        if ( $self->{too_complex} ) {
+            my $method = $self->{method};
+            if ( exists $_last{$method} ) {
+                @{$self->{last}} = $_last{$method}->($self);
+            }
+            else {
+                my $redo = $self->{parent}->$method ( @{ $self->{param} } );
+                @{$self->{last}} = $redo->last;
+            }
+        }
+        else {
+            return $self->SUPER::last;
+        }
     }
-    $self->trace(title=>"last") if $TRACE;
-    if ( $self->{too_complex} ) {
-        my $method = $self->{method};
-        return $_last{$method}->($self) if exists $_last{$method};
-        my $redo = $self->{parent}->$method ( @{ $self->{param} } );
-        return @{$self->{last}} = $redo->last;
-    }
-    return $self->SUPER::last;
+    return wantarray ? @{$self->{last}} : $self->{last}[0];
 }
 
 
@@ -883,15 +864,12 @@ sub offset {
 
 
 sub is_null {
-    my $self = $_[0];
-    return 0 if $self->{too_complex};
-    return $self->SUPER::is_null;
+    $_[0]->{too_complex} ? 0 : $_[0]->SUPER::is_null;
 }
 
 
 sub is_too_complex {
-    my $self = $_[0];
-    $self->{too_complex} ? 1 : 0;
+    $_[0]->{too_complex} ? 1 : 0;
 }
 
 
@@ -1140,7 +1118,6 @@ sub until {
 sub union {
     my $a1 = shift;
     my $b1;
-    return $a1 if $#_ < 0;
     if (ref ($_[0]) eq ref($a1) ) {
         $b1 = shift;
     } 
@@ -1280,7 +1257,6 @@ sub tolerance {
 
 sub _pretty_print {
     my $self = shift;
-    # return "()" if $self->is_null;
     return "$self" unless $self->{too_complex};
     return $self->{method} . "( " .
                ( ref($self->{parent}) eq 'ARRAY' ? 
