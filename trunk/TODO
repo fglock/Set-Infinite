@@ -1,5 +1,13 @@
 Set::Infinite TODO 
 
+    - document that the parameters to new() must be sorted.
+      Or fix it.  Bug report by Jim Cromie
+
+    - bug fix needed:
+
+      $set = Set::Infinite->new( -10, 0 );
+      creates a set with "-10" instead of [-10,0]
+
     - verify and fix unbalanced trace_open/trace_close 
 
     - move _cleanup to S::I::Basic
