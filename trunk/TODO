@@ -25,8 +25,6 @@ Set::Infinite TODO
     - tests for "iterate" min/max/first/last
     - more tests for min/max/span/size on too_complex sets
 
-    - refactor backtracking
-
     - find out how to compare "<=>" unbounded sets
     - try using first() in intersects() and "<=>"
     - test finding out min/max of integer open sets (see backtrack.t tests 2,3)
@@ -45,12 +43,6 @@ BACKTRACK
                 complement
 
 	change $backtrack_arg2 = $arg->quantize(@param)->union(); to span()
-
-	backtracking: should be extensible. Use tables instead of if-else
-	backtracking: change ->{method} to sub-pointer instead of string ?
-	backtracking: define 'backwards' method instead of if-else (near 3-08)
-
-	backtracking: define union, complement, contains...
 
 	backtracking: implement remaining tests in backtrack.t
 	verify results in backtrack.t
