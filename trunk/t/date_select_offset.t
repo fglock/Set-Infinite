@@ -70,10 +70,10 @@ test ( "Year offset: ", ' $a->offset(unit => "years", mode=>"offset", value=>[1,
 test ( "Weekday offset: ", ' $a->offset(unit => "weekdays", mode=>"offset", value=>[1,1]) ',
   "[2001-01-01 00:00:00..2001-01-29 00:00:00],2001-02-05 00:00:00");
 
-test ( "Joined array: ", ' $a->quantize( unit => "weeks")->compact ',
+test ( "Joined array: ", ' $a->quantize( unit => "weeks") ',
  "[2000-12-31 00:00:00..2001-01-07 00:00:00),[2001-01-07 00:00:00..2001-01-14 00:00:00),[2001-01-14 00:00:00..2001-01-21 00:00:00),[2001-01-21 00:00:00..2001-01-28 00:00:00),[2001-01-28 00:00:00..2001-02-04 00:00:00)");
 
-test ( "Joined array: ", ' join ("", $a->quantize( unit => "weeks" )->select( freq => 2, by => [1])->compact ) ',
+test ( "Joined array: ", ' join ("", $a->quantize( unit => "weeks" )->select( freq => 2, by => [1]) ) ',
  "[2001-01-07 00:00:00..2001-01-14 00:00:00),[2001-01-21 00:00:00..2001-01-28 00:00:00)");
 
 $b = Set::Infinite->new(["2001-09-09","2001-09-10"]);

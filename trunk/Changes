@@ -1,6 +1,10 @@
 Revision history for Perl extension Set::Infinite.
 
-    refactored methods: min, max, first, last, until, iterate
+0.5301
+    refactored methods: min, max, first, last, until, iterate, offset
+    removed obsolete method: compact
+    renamed internal methods with _underline
+    removed obsolete 'date' docs
 
 0.53    2003-09-05
     fixes a test that fails under 5.00503

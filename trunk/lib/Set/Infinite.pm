@@ -13,20 +13,14 @@ use Set::Infinite::Basic;
 use Carp;
 use Data::Dumper; 
 
-use vars qw( @ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION 
+use vars qw( @ISA @EXPORT_OK @EXPORT $VERSION 
     $TRACE $DEBUG_BT $PRETTY_PRINT $inf $minus_inf $neg_inf 
     $too_complex $backtrack_depth 
     $max_backtrack_depth $max_intersection_depth );
 @ISA = qw( Set::Infinite::Basic Exporter );
 
-# This allows declaration    use Set::Infinite ':all';
-%EXPORT_TAGS = ( 'all' => [ qw(inf $inf) ] );
-@EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } , 
-    qw(inf $inf trace_open trace_close) );
-    # qw(inf new $inf trace_open trace_close) );
-@EXPORT = qw();
-
-$VERSION = 0.53;
+@EXPORT_OK = qw(inf $inf trace_open trace_close);
+@EXPORT = ();
 
 use Set::Infinite::Arithmetic;
 
@@ -42,6 +36,7 @@ sub minus_inf ()      { $minus_inf }
 use vars qw( $trace_level %level_title );
 
 BEGIN {
+    $VERSION = 0.5301;
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -70,7 +65,7 @@ Set::Infinite is a Set Theory module for infinite sets.
 
 It works with reals, integers, and objects.
 
-When it is used dates, this module provides schedule checks (intersections),
+When it is used with date objects, this module provides schedule checks (intersections),
 unions, and infinite recurrences.
 
 =cut
@@ -85,11 +80,6 @@ use overload
 #   type  list  fixtype  numeric  min  max
 #   integer  real  new  span  copy
  
-# obsolete!
-sub compact {
-    return $_[0];
-}
-
 # internal "trace" routines for debugging
 
 sub trace { # title=>'aaa'
@@ -153,6 +143,7 @@ sub _function {
     return $b;
 }
 
+
 # same as _function, but with 2 arguments
 sub _function2 {
     my ($self, $method, $arg) = (shift, shift, shift);
@@ -167,6 +158,7 @@ sub _function2 {
     return $b;
 }
 
+
 # quantize: splits in same-size subsets
 
 sub quantize {
@@ -175,17 +167,17 @@ sub quantize {
     my @min = $self->min_a;
     my @max = $self->max_a;
     if (($self->{too_complex}) or 
-        (defined $min[0] && $min[0] == -&inf) or 
-        (defined $max[0] && $max[0] == &inf)) {
+        (defined $min[0] && $min[0] == $neg_inf) or 
+        (defined $max[0] && $max[0] == $inf)) {
         # $self->trace(title=>"quantize:backtrack"); 
         my $b = $self->_function( 'quantize', @_ );
 
         # TODO: find out how to calculate 'last'
         $b->{last} = [ undef, 0 ];
 
-        if (defined $min[0] ) {    # && ($min[0] != -&inf) ) {
+        if (defined $min[0] ) {    # && ($min[0] != $neg_inf) ) {
             my $first;
-            if (( $min[0] == -&inf ) || ( $min[0] == &inf )) {
+            if (( $min[0] == $neg_inf ) || ( $min[0] == $inf )) {
                 $first = $self->new( $min[0] );
                 $b->{first} = [$first, $b];  # link to itself!
             }
@@ -200,7 +192,7 @@ sub quantize {
             }
 
             my $last;
-            if (( $max[0] == -&inf ) || ( $max[0] == &inf )) {
+            if (( $max[0] == $neg_inf ) || ( $max[0] == $inf )) {
                 $last = $self->new( $max[0] );
                 @{$b->{last}} = ($last, $b); # link to itself!
             }
@@ -290,7 +282,6 @@ sub quantize {
         push @a, $tmp;
     }
 
-
     $b->{list} = \@a;        # change data
     $b->{cant_cleanup} = 1;     
     $self->trace_close( arg => $b ) if $TRACE;
@@ -348,7 +339,7 @@ sub select {
 
         # my @min = $self->min_a;
         # my @max = $self->max_a;
-        if ( defined $min[0] and ($min[0] != -$inf) ) {
+        if ( defined $min[0] and ($min[0] != $neg_inf) ) {
             # warn "select is complex but defineable: min=".$self->min_a ." count=$count freq=$freq";
             # carp " testing select min...";
             # my %param = @_;
@@ -436,7 +427,7 @@ sub select {
             my %param = @_;
             my @by = exists $param{by} ? @{ $param{by} } : (0);
             my @by1 = sort @by;
-            if ( ($by1[-1] < 0) and not (exists $param{freq} or exists $param{count}) ){
+            if ( ($by1[-1] < 0) and not (exists $param{freq} or exists $param{count}) ) {
                 # carp "select might be defineable - max = ".$self->max." and by = @by";
                 # TODO: find out what '100' should be
                 # warn $b->intersection($self->max - 100, $self->max);
@@ -452,8 +443,6 @@ sub select {
         return $res;   # empty parent
     }
 
-    # warn " by @by count $count freq $freq";
- 
     my $n = 0;
     my ($base, $pos);
     my %selection;
@@ -461,7 +450,6 @@ sub select {
         $base = $n * $freq;
         for (@by) {
             $pos = $base + $_;
-            # carp " [$base-$max $pos] ";
             $selection{$pos} = 1 unless ($pos < 0) or ($pos >= $max);
         }
         $n++;
@@ -471,19 +459,15 @@ sub select {
     my $tmp;
     my @keys = sort { $a <=> $b } keys %selection;
 
-    # warn " keys @keys ";
-    # carp " SELECT: @by = { @{ $param{by} } } = @keys parent=$self";
-
     foreach (@keys) {
         $tmp = $self->{list}[$_];
-        # next unless defined $tmp;
         push @{$res->{list}}, $tmp;
     }
     $res->{cant_cleanup} = 1; 
-    # carp " res: $res";
     $self->trace_close( arg => $res ) if $TRACE;
     return $res;
 }
+
 
 my %_first = (
     'complement' =>
@@ -497,7 +481,7 @@ my %_first = (
             my $first;
             my @next;
             my $parent;
-            if ( $parent_min[0]->min == -$inf ) {
+            if ( $parent_min[0]->min == $neg_inf ) {
                 my @parent_second = $parent_min[1]->first;
                 #    (-inf..min)        (second..?)
                 #            (min..second)   = complement
@@ -523,7 +507,7 @@ my %_first = (
                 return $first;
             }
 
-            my @no_tail = $self->new(-$inf,$next[0]);
+            my @no_tail = $self->new($neg_inf,$next[0]);
             $no_tail[0]->{list}[0]{open_end} = $next[1];
             my $tail = $parent->union($no_tail[0])->complement;  
             return @{$self->{first}} = ($first, $tail);
@@ -678,6 +662,14 @@ my %_first = (
             }
             return @{$self->{first}} = ($first, $tail);
         },
+    'offset' =>
+        sub {
+            my $self = shift;
+            my ($first, $tail) = $self->{parent}->first;
+            $first = $first->offset( @{$self->{param}} );
+            $tail  = $tail->_function( 'offset', @{$self->{param}} );
+            return @{$self->{first}} = ($first, $tail);
+        },
 );  # %_first
 
 my %_last = (
@@ -758,7 +750,6 @@ my %_last = (
                 $which = ($max[0][0] > $max[1][0]) ? 1 : 0;
 
                 for my $which1 ( $which, 1 - $which ) {
-
                   my $tmp_parent = $parent[$which1];
                   ($last1, $parent[$which1]) = @{ $last[$which1] };
                   if ( $last1->is_null ) {
@@ -771,22 +762,21 @@ my %_last = (
                   unless ( $intersection->is_null ) {
                     # $self->trace( title=>"got an intersection" );
                     if ( $intersection->is_too_complex ) {
-                        $self->trace( title=>"got a too_complex intersection" ); 
+                        $self->trace( title=>"got a too_complex intersection" ) if $TRACE; 
                         # warn "too complex intersection";
                         $parent[$which1] = $tmp_parent;
                     }
                     else {
-                        $self->trace( title=>"got an intersection" );
+                        $self->trace( title=>"got an intersection" ) if $TRACE;
                         $which = $which1;
                         last SEARCH;
                     }
                   };
                 }
-                $self->trace( title=>"next try" );
             }
-            $self->trace( title=>"exit loop" );
+            $self->trace( title=>"exit loop" ) if $TRACE;
             if ( $intersection->is_null ) {
-                $self->trace( title=> "got no intersection so far" );
+                $self->trace( title=> "got no intersection so far" ) if $TRACE;
             }
             if ( $#{ $intersection->{list} } > 0 ) {
                 my $tail;
@@ -849,12 +839,16 @@ my %_last = (
             $last[1] = $last[1]->_function( 'iterate', @{$self->{param}} ) if ref($last[1]);
             return @{$self->{last}} = @last;
         },
+    'offset' =>
+        sub {
+            my $self = shift;
+            my ($last, $tail) = $self->{parent}->last;
+            $last = $last->offset( @{$self->{param}} );
+            $tail  = $tail->_function( 'offset', @{$self->{param}} );
+            return @{$self->{last}} = ($last, $tail);
+        },
 );  # %_last
 
-# first() could also be called "car" as in Lisp
-# sub car { &first }
-
-# use Data::Dumper; warn "using Data::Dumper";
 
 sub first {
     my $self = shift;
@@ -879,6 +873,7 @@ sub first {
     return $self->SUPER::first;
 }
 
+
 sub last {
     my $self = shift;
     if (exists $self->{last} ) {
@@ -902,34 +897,16 @@ sub last {
     return $self->SUPER::last;
 }
 
+
 # offset: offsets subsets
 sub offset {
     my $self = shift;
-    #  my $class = ref($self);
-
-    $self->trace_open(title=>"offset") if $TRACE;
 
     if ($self->{too_complex}) {
-        my $b1 = $self->_function( 'offset', @_ );
-        # first() code
-        my ($first, $tail) = $self->first;
-        # TODO: check for invalid $first, $tail
-        $first = $first->offset( @_ );
-        $tail  = $tail->_function( 'offset', @_ );
-        $b1->{first} = [$first, $tail];
-
-        my $last;
-        ($last, $tail) = $self->last;
-        # TODO: check for invalid $last, $tail
-        $last = $last->offset( @_ );
-        $tail  = $tail->_function( 'offset', @_ );
-        $b1->{last} = [$last, $tail];
-
-        $self->trace_close( arg => $b1 ) if $TRACE;
-        return $b1;
+        return $self->_function( 'offset', @_ );
     }
 
-    # return $self if $#{ $self->{list} } < 0;
+    $self->trace_open(title=>"offset") if $TRACE;
 
     my @a;
     my %param = @_;
@@ -1018,6 +995,7 @@ sub offset {
     return $b1;
 }
 
+
 # note: is_null might return a wrong value if is_too_complex is set.
 # this is due to the implementation of min()
 sub is_null {
@@ -1033,7 +1011,7 @@ sub is_too_complex {
 }
 
 
-# shows how a set looks like after quantize->compact
+# shows how a 'compacted' set looks like after quantize
 sub _quantize_span {
     my $self = shift;
     my %param = @_;
@@ -1097,7 +1075,6 @@ sub _backtrack {
         carp (__PACKAGE__ . ": Backtrack too deep (more than " . $max_backtrack_depth . " levels)");
     }
     print " [BT$backtrack_depth-0:",join(";",@_),"] \n" if $DEBUG_BT;
-    my $result;
     print " [bt$backtrack_depth-0-1:self=",join(";",%{$self}),"] \n" if $DEBUG_BT;
 
     # backtrack on parent sets
@@ -1111,7 +1088,7 @@ sub _backtrack {
         if ($self->{method} eq 'until') {
             $self->trace( title=>"trying to find out from < $arg > - before" ) if $DEBUG_BT;
 
-            my $before = $self->{parent}[0]->intersection( -$inf, $arg->min )->max;
+            my $before = $self->{parent}[0]->intersection( $neg_inf, $arg->min )->max;
             $before = $arg->min unless $before;
             $self->trace( title=>"trying to find out from < $arg > - after" ) if $DEBUG_BT;
             my $after = $self->{parent}[1]->intersection( $arg->max, $inf )->min;
@@ -1134,7 +1111,7 @@ sub _backtrack {
 
         # apply {method}
         my $method = $self->{method};
-        $result = $result1->$method ($result2);
+        my $result = $result1->$method ($result2);
 
         $backtrack_depth--;
         $self->trace_close( arg => $result ) if $TRACE;
@@ -1158,7 +1135,6 @@ sub _backtrack {
                 $backtrack_arg2 = $arg;  
     }
     elsif ($my_method eq 'quantize') {
-
                 if ($arg->{too_complex}) {
                     $backtrack_arg2 = $arg;
                 }
@@ -1166,9 +1142,8 @@ sub _backtrack {
                     $backtrack_arg2 = $arg->quantize(@param)->_quantize_span;
                 }
     }
-    # offset - apply offset with negative values
     elsif ($my_method eq 'offset') {
-                # (TODO) ????
+        # offset - apply offset with negative values
                 my %tmp = @param;
                 my @values = sort @{$tmp{value}};
 
@@ -1192,12 +1167,13 @@ sub _backtrack {
     print " [bt$backtrack_depth-3-14:expr: $result1 -- ",$self->{method}," ]\n" if $DEBUG_BT;
     print " [bt$backtrack_depth-3-15:expr: $expr ; param: ", join(";",@param),"]\n" if $DEBUG_BT;
     $method = $self->{method};
-    $result = $result1->$method (@param);
+    my $result = $result1->$method (@param);
     print " [bt$backtrack_depth-3-19:RESULT ",ref($result), "=",join(";",%{$result}),"=$result] \n" if $DEBUG_BT;
     $backtrack_depth--;
     $self->trace_close( arg => $result ) if $TRACE;
     return $result;
 }
+
 
 sub intersects {
     my $a = shift;
@@ -1238,6 +1214,7 @@ sub intersects {
     return $a->SUPER::intersects( $b );
 }
 
+
 sub iterate {
     my $self = shift;
     if ($self->{too_complex}) {
@@ -1247,6 +1224,7 @@ sub iterate {
     $self->trace(title=>"iterate") if $TRACE;
     return $self->SUPER::iterate( @_ );
 }
+
 
 sub intersection {
     my $a1 = shift;
@@ -1279,6 +1257,7 @@ sub intersection {
     }
     return $a1->SUPER::intersection( $b1 );
 }
+
 
 sub complement {
     my $self = shift;
@@ -1341,6 +1320,7 @@ sub union {
     return $a1->SUPER::union( $b1 );
 }
 
+
 # there are some ways to process 'contains':
 # A CONTAINS B IF A == ( A UNION B )
 #    - faster
@@ -1368,6 +1348,7 @@ sub contains {
     $a->trace_close( arg => ($b1 == $a ? 1 : 0) ) if $TRACE;
     return ($b1 == $a) ? 1 : 0;
 }
+
 
 my %_min = (
     'iterate' => 
@@ -1447,7 +1428,7 @@ my %_max = (
                 unless (defined $parent[0]) {
                     return @{$self->{max}} = @parent;
                 }
-                if ( $parent[0] == -&inf ) {
+                if ( $parent[0] == $neg_inf ) {
                     return @{$self->{max}} = ($inf, 1);
                 }
                 $parent[1] = 1 - $parent[1];  # invert open/close set
@@ -1536,10 +1517,8 @@ sub max_a {
                 return @{$self->{max}} = @parent;
             }
 
-            #  - 1e-10 is a fixup for open sets
             my $tmp = $parent[0];
-            # $tmp -= 1e-10 if $parent[1] and ($method eq 'quantize');
-            if ( ($tmp == &inf) or ($tmp == -&inf) ) {
+            if ( ($tmp == $inf) or ($tmp == $neg_inf) ) {
                 $self->trace_close( arg => "$tmp 1" ) if $TRACE;
                 return @{$self->{max}} = ($tmp, 1);
             }
@@ -1581,11 +1560,13 @@ sub max_a {
     return $self->SUPER::max_a;
 };
 
+
 sub count {
     my ($self) = shift;
     return $inf if $self->{too_complex};
     return $self->SUPER::count;
 }
+
 
 sub size { 
     my ($self) = shift;
@@ -1764,6 +1745,8 @@ This happens with sets that represent infinite recurrences, such as
 when you ask for a quantization on a
 set bounded by -inf or inf.
 
+See also: C<count>.
+
 =head1 SCALAR FUNCTIONS
 
 =head2 min
@@ -1822,13 +1805,10 @@ See also: C<spaceship>.
 
 Chooses a default object data type.
 
-default is none (a normal perl SCALAR).
+default is none (a normal Perl SCALAR).
 
     type('Math::BigFloat');
     type('Math::BigInt');
-    type('Set::Infinite::Date');
-
-See notes on Set::Infinite::Date below.
 
 =head1 SPECIAL SET FUNCTIONS (WIDGETS)
 
@@ -1937,8 +1917,6 @@ examples:
 
         type('Math::BigFloat');
         type('Math::BigInt');
-        type('Set::Infinite::Date');
-            See notes on Set::Infinite::Date below.
 
 =head1 INTERNAL FUNCTIONS
 
@@ -2004,34 +1982,8 @@ Comparison of unbounded recurrences is not implemented.
 
 =head1 NOTES ON DATES
 
-See modules DateTime::Set and Date::Set for up-to-date information on date-sets. 
-
-Set::Infinite::Date is a Date "plug-in" for sets.
-
-usage:
-
-    type('Set::Infinite::Date');  # allows values like '2001-05-02 10:00:00'
-
-Set::Infinite::Date requires Time::Local.
-
-    use Set::Infinite;
-    Set::Infinite->type('Set::Infinite::Date');
-    Set::Infinite::Date->date_format("year-month-day");
-
-    $a = Set::Infinite->new('2001-05-02', '2001-05-13');
-    print "Weeks in $a: ", $a->quantize(unit => 'weeks', quant => 1);
-
-    $a = Set::Infinite->new('09:30', '10:35');
-    print "Quarters of hour in $a: ", $a->quantize(unit => 'minutes', quant => 15);
-
-Quantize units can be years, months, days, weeks, hours, minutes, or seconds.
-To quantize the year to first-week-of-year until last-week-of-year, use 'weekyears':
-
-        ->quantize( unit => weekyears, wkst => 1 )
-
-'wkst' parameter is '1' for monday (default), '7' for sunday.
-
-max and min functions will also show in date/time format.
+See modules DateTime::Set, DateTime::Event::Recurrence, and
+DateTime::Event::ICal for up-to-date information on date-sets. 
 
 =head1 CAVEATS
 
@@ -2089,15 +2041,13 @@ This is a structure that holds the complement of a "complex set":
     param  => [ ]                 # optional arguments for the function
   }
 
+
 =head1 SEE ALSO
 
 C<DateTime::Set>
 
 The perl-date-time project <http://datetime.perl.org> 
 
-C<Date::Set>
-
-The Reefknot project <http://reefknot.sf.net>
 
 =head1 AUTHOR
 
