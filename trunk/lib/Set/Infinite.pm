@@ -533,6 +533,7 @@ my %_first = (
             $a1->trace( title=>"computing first()" );
             my @first1 = $a1->first;
             my @first2 = $b1->first;
+            # warn " first $first1[0] , ". ($first1[1]->first)[0] ." .. $first2[0] , ".($first2[1]->first)[0];
             my ($first, $tail);
             if ( $first2[0] <= $first1[0] ) {
                 # added ->first because it returns 2 spans if $a1 == $a2
@@ -556,6 +557,9 @@ my %_first = (
             my ($first, $tail) = $self->{parent}->first;
             $first = $first->offset( @{$self->{param}} );
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
+            my $more;
+            ($first, $more) = $first->first;
+            $tail = $tail->_function2( 'union', $more ) if defined $more;
             return ($first, $tail);
         },
     'tolerance' =>
@@ -712,6 +716,30 @@ my %_last = (
             }
             return ($last, $tail);
         },
+    'until' =>
+        sub {
+            my $self = $_[0];
+            my ($a1, $b1) = @{ $self->{parent} };
+            $a1->trace( title=>"computing last()" );
+            my @last1 = $a1->last;
+            my @last2 = $b1->last;
+            my ($last, $tail);
+            if ( $last2[0] <= $last1[0] ) {
+                # added ->last because it returns 2 spans if $a1 == $a2
+                $last = $last2[0]->until( $a1 )->last;
+                $tail = $a1->_function2( "until", $last2[1] );
+            }
+            else {
+                $last = $a1->new( $last1[0] )->until( $last2[0] );
+                if ( defined $last1[1] ) {
+                    $tail = $last1[1]->_function2( "until", $last2[1] );
+                }
+                else {
+                    $tail = undef;
+                }
+            }
+            return ($last, $tail);
+        },
     'iterate' =>
         sub {
             my $self = $_[0];
@@ -727,6 +755,9 @@ my %_last = (
             my ($last, $tail) = $self->{parent}->last;
             $last = $last->offset( @{$self->{param}} );
             $tail  = $tail->_function( 'offset', @{$self->{param}} );
+            my $more;
+            ($last, $more) = $last->last;
+            $tail = $tail->_function2( 'union', $more ) if defined $more;
             return ($last, $tail);
         },
     'tolerance' =>

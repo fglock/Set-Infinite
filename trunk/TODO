@@ -14,7 +14,7 @@ Set::Infinite TODO
 
     - a set with min == inf or max = -inf is an error!
 
-    - tests for "iterate", "until" min/max/first
+    - tests for "iterate" min/max/first
 
     - refactor backtracking, offset, quantize
 
