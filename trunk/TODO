@@ -1,6 +1,7 @@
 Set::Infinite TODO 
 
 - document the "separators" method - use example from t/infinite.t
+  Find out how to make it more user friendly.
 
 - quantize() should use "iterate"
   (unless this breaks _quantize_span)
@@ -8,6 +9,7 @@ Set::Infinite TODO
 
 - spaceship should return "undef" if the sets can't be compared.
 - "contains" should test the result of "==" for undef.
+- count() should return "undef" if the set can't be counted.
 
 - test new methods
 
@@ -43,6 +45,8 @@ Old TODO:
     - parser (another module)
 
     - _quantize_span should only be used inside backtrack()
+      Implementing quantize() using iterator() should make 
+      _quantize_span() unnecessary.
 
     - provide a constructor that allow for un-ordered and overlapping spans
 

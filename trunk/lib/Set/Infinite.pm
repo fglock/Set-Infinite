@@ -860,6 +860,7 @@ sub offset {
             ($this, $next) = $sub_mode->( $sub_unit, $ia, $ib, @{$value[$j]} );
             next if ($this > $next);    # skip if a > b
             if ($this == $next) {
+                # TODO: fix this
                 $open_end = $open_begin;
             }
             push @a, { a => $this , b => $next ,
@@ -1028,7 +1029,7 @@ sub _backtrack {
         }
     }
     else {
-        # has 1 parent and parameters (offset, select, quantize)
+        # has 1 parent and parameters (offset, select, quantize, iterate)
 
         $result = $self->{parent}->_backtrack( $method, $arg ); 
         $method = $self->{method};
@@ -1251,6 +1252,7 @@ sub max_a {
 
 sub count {
     my $self = $_[0];
+    # NOTE: subclasses may return "undef" if necessary
     return $inf if $self->{too_complex};
     return $self->SUPER::count;
 }
@@ -1279,7 +1281,7 @@ sub spaceship {
 sub _cleanup {
     my ($self) = shift;
     return $self if $self->{too_complex};
-    return $self if $self->{cant_cleanup};     # quantize output is "virtual", can't be cleaned
+    return $self if $self->{cant_cleanup};   # "quantized" sets are lazy, can't be "cleaned"
     $_ = 1;
     while ( $_ <= $#{$self->{list}} ) {
         my @tmp = Set::Infinite::Basic::_simple_union($self->{list}->[$_],
@@ -1310,7 +1312,7 @@ sub tolerance {
         }
         return $self->SUPER::tolerance( $tmp );
     }
-    # global
+    # class method
     __PACKAGE__->SUPER::tolerance( $tmp ) if defined($tmp);
     return __PACKAGE__->SUPER::tolerance;   
 }
