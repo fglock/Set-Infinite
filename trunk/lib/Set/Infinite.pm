@@ -43,7 +43,7 @@ sub compact { @_ }
 
 
 BEGIN {
-    $VERSION = "0.60";
+    $VERSION = "0.61";
     $TRACE = 0;         # enable basic trace method execution
     $DEBUG_BT = 0;      # enable backtrack tracer
     $PRETTY_PRINT = 0;  # 0 = print 'Too Complex'; 1 = describe functions
@@ -1044,7 +1044,7 @@ sub intersects {
 
     $a1->trace(title=>"intersects");
     if ($a1->{too_complex}) {
-        $a1 = $a1->_backtrack('intersection', $b1);
+        $a1 = $a1->_backtrack('intersection', $b1 ); 
     }  # don't put 'else' here
     if ($b1->{too_complex}) {
         $b1 = $b1->_backtrack('intersection', $a1);
@@ -1102,7 +1102,7 @@ sub intersection {
     if ($b1->{too_complex}) {
         $b1 = $b1->_backtrack('intersection', $a1) unless $a1->{too_complex};
     }
-    if (($a1->{too_complex}) or ($b1->{too_complex})) {
+    if ( $a1->{too_complex} || $b1->{too_complex} ) {
         $a1->trace_close( ) if $TRACE;
         return $a1->_function2( 'intersection', $b1 );
     }
@@ -1114,9 +1114,11 @@ sub intersected_spans {
     my $a1 = shift;
     my $b1 = ref ($_[0]) eq ref($a1) ? $_[0] : $a1->new(@_);
 
-    if ( $b1->{too_complex} && ! $a1->{too_complex} )
-    {
-        $b1 = $b1->intersection( $a1 );
+    if ($a1->{too_complex}) {
+        $a1 = $a1->_backtrack('intersection', $b1 ) unless $b1->{too_complex};  
+    }  # don't put 'else' here
+    if ($b1->{too_complex}) {
+        $b1 = $b1->_backtrack('intersection', $a1) unless $a1->{too_complex};
     }
 
     if ( ! $b1->{too_complex} && ! $a1->{too_complex} )
