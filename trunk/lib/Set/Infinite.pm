@@ -43,6 +43,7 @@ $neg_inf = $minus_inf  = -$inf;
 sub inf ()            { $inf }
 sub minus_inf ()      { $minus_inf }
 *no_cleanup = \&Set::Infinite::Basic::_no_cleanup;
+*type       = \&Set::Infinite::Basic::type;
 sub compact { @_ }
 
 

@@ -13,7 +13,6 @@ lib/Set/Infinite/Arithmetic.pm
 
 _todo/bigfloat.t
 _todo/bigint.t
-_todo/simple_bigfloat.t
 
 t/until.t
 t/date.t
