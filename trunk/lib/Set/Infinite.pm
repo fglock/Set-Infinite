@@ -14,7 +14,7 @@ use Carp;
 use Data::Dumper; 
 
 use vars qw( @ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION 
-    $TRACE $DEBUG_BT $PRETTY_PRINT $inf $minus_inf 
+    $TRACE $DEBUG_BT $PRETTY_PRINT $inf $minus_inf $neg_inf 
     $too_complex $backtrack_depth 
     $max_backtrack_depth $max_intersection_depth );
 @ISA = qw( Set::Infinite::Basic Exporter );
@@ -32,7 +32,7 @@ use Set::Infinite::Arithmetic;
 
 # Infinity vars
 $inf            = 100**100**100;
-$minus_inf      = -$inf;
+$neg_inf = $minus_inf  = -$inf;
 
 # obsolete!
 sub inf ()            { $inf }
@@ -226,11 +226,11 @@ sub quantize {
 
             @{$b->{min}} = $first->min_a;
             @{$b->{max}} = $last->max_a;
-            $b->trace_close( arg => $b );
+            $b->trace_close( arg => $b ) if $TRACE;
             return $b;
         }
 
-        $b->trace_close( arg => $b );
+        $b->trace_close( arg => $b ) if $TRACE;
         return $b;
     }
     # $self->trace(title=>"quantize"); 
@@ -250,7 +250,7 @@ sub quantize {
     # print " [MIN:$min] \n";
     unless (defined $min) {
         # print " [NULL!]\n";
-        $self->trace_close( arg => $b );
+        $self->trace_close( arg => $b ) if $TRACE;
         return $b;    
     }
 
@@ -325,7 +325,7 @@ sub select {
     # warn "select: freq=$freq count=$count by=[@by]";
 
     if ($count <= 0) {
-        $self->trace_close( arg => $res );
+        $self->trace_close( arg => $res ) if $TRACE;
         return $res;
     }
 
@@ -423,11 +423,11 @@ sub select {
                     # setup min/first cache
                     $res->{first} = [$first[0], $union];            
                     # warn "TODO: setup first cache";
-                    $self->trace_close( arg => $res );
+                    $self->trace_close( arg => $res ) if $TRACE;
                     return $res;
                 }
                 # warn "select: return $result and no tail";
-                $self->trace_close( arg => $result );
+                $self->trace_close( arg => $result ) if $TRACE;
                 return $result;
             }
         }
@@ -443,12 +443,12 @@ sub select {
             }
         }
 
-        $self->trace_close( arg => $res );
+        $self->trace_close( arg => $res ) if $TRACE;
         return $res;
     }
 
     unless ($max) {
-        $self->trace_close( arg => $res );
+        $self->trace_close( arg => $res ) if $TRACE;
         return $res;   # empty parent
     }
 
@@ -481,7 +481,7 @@ sub select {
     }
     $res->{cant_cleanup} = 1; 
     # carp " res: $res";
-    $self->trace_close( arg => $res );
+    $self->trace_close( arg => $res ) if $TRACE;
     return $res;
 }
 
@@ -516,7 +516,7 @@ sub first {
 
             my @parent_min = $self->{parent}->first;
             unless ( defined $parent_min[0] ) {
-                    $self->trace_close( arg => 'bad parent: undef 0' );
+                    $self->trace_close( arg => 'bad parent: undef 0' ) if $TRACE;
                     return wantarray ? (undef, 0) : undef;
             }
 
@@ -551,7 +551,7 @@ sub first {
                 $parent = $parent_min[1];
             }
             unless (wantarray) {
-                $self->trace_close( arg => $first );
+                $self->trace_close( arg => $first ) if $TRACE;
                 return $first;
             }
 
@@ -584,25 +584,25 @@ sub first {
 
                 @{$first[0]} = $parent[0]->first;
                 @{$first[1]} = $parent[1]->first;
-                $self->trace( title=>"trying #$retry_count: $first[0][0] -- $first[1][0]" );
+                $self->trace( title=>"trying #$retry_count: $first[0][0] -- $first[1][0]" ) if $TRACE;
 
                 # warn "trying #$retry_count: $first[0][0] -- $first[1][0]" ;
 
                 unless ( defined $first[0][0] ) {
                     # warn "don't know first of $method";
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 }
                 unless ( defined $first[1][0] ) {
                     # warn "don't know first of $method";
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 }
                 @{$min[0]} = $first[0][0]->min_a;
                 @{$min[1]} = $first[1][0]->min_a;
                 unless ( defined $min[0][0] && defined $min[1][0] ) {
-                    $self->trace( title=>"can't find min()" );
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace( title=>"can't find min()" ) if $TRACE;
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 } 
 
@@ -665,7 +665,7 @@ sub first {
 
             # warn "first intersection is $intersection of $first1 $parent[1-$which]";
             unless (wantarray) {
-                    $self->trace_close( arg => $intersection );
+                    $self->trace_close( arg => $intersection ) if $TRACE;
                     return $intersection;
             }
             my $tmp;
@@ -692,11 +692,11 @@ sub first {
 
             # check min1/min2 for undef
             unless ( defined $min[0][0] ) {
-                $self->trace_close( arg => "@{$first[1]}" );
+                $self->trace_close( arg => "@{$first[1]}" ) if $TRACE;
                 return @{$first[1]}
             }
             unless ( defined $min[1][0] ) {
-                $self->trace_close( arg => "@{$first[0]}" );
+                $self->trace_close( arg => "@{$first[0]}" ) if $TRACE;
                 return @{$first[0]}
             }
 
@@ -704,7 +704,7 @@ sub first {
             my $first = $first[$which][0];
             # return $first unless wantarray;
             unless (wantarray) {
-                    $self->trace_close( arg => $first );
+                    $self->trace_close( arg => $first ) if $TRACE;
                     return $first;
             }
             # find out the tail
@@ -763,7 +763,7 @@ sub last {
         if ($method eq 'complement') {
             my @parent_max = $self->{parent}->last;
             unless ( defined $parent_max[0] ) {
-                $self->trace_close( arg => 'bad parent: undef 0' );
+                $self->trace_close( arg => 'bad parent: undef 0' ) if $TRACE;
                 return wantarray ? (undef, 0) : undef;
             }
             my $parent_complement;
@@ -793,7 +793,7 @@ sub last {
                 $parent = $parent_max[1];
             }
             unless (wantarray) {
-                $self->trace_close( arg => $last );
+                $self->trace_close( arg => $last ) if $TRACE;
                 return $last;
             }
             my @no_tail = $self->new($next[0], $inf);
@@ -820,19 +820,19 @@ sub last {
                 # warn "last trying #$retry_count: $last[0][0] -- $last[1][0]" ;
                 unless ( defined $last[0][0] ) {
                     # warn "don't know last of $method";
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 }
                 unless ( defined $last[1][0] ) {
                     # warn "don't know last of $method";
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 }
                 @{$max[0]} = $last[0][0]->max_a;
                 @{$max[1]} = $last[1][0]->max_a;
                 unless ( defined $max[0][0] && defined $max[1][0] ) {
-                    $self->trace( title=>"can't find max()" );
-                    $self->trace_close( arg => 'undef' );
+                    $self->trace( title=>"can't find max()" ) if $TRACE;
+                    $self->trace_close( arg => 'undef' ) if $TRACE;
                     return undef;
                 }
 
@@ -887,7 +887,7 @@ sub last {
                 # TODO: remove $intersection from [1-$which]
             }
             unless (wantarray) {
-                    $self->trace_close( arg => $intersection );
+                    $self->trace_close( arg => $intersection ) if $TRACE;
                     return $intersection;
             }
             my $tmp;
@@ -909,11 +909,11 @@ sub last {
 
             # check max1/max2 for undef
             unless ( defined $max[0][0] ) {
-                $self->trace_close( arg => "@{$last[1]}" );
+                $self->trace_close( arg => "@{$last[1]}" ) if $TRACE;
                 return @{$last[1]}
             }
             unless ( defined $max[1][0] ) {
-                $self->trace_close( arg => "@{$last[0]}" );
+                $self->trace_close( arg => "@{$last[0]}" ) if $TRACE;
                 return @{$last[0]}
             }
 
@@ -921,7 +921,7 @@ sub last {
             my $last = $last[$which][0];
             # return $last unless wantarray;
             unless (wantarray) {
-                    $self->trace_close( arg => $last );
+                    $self->trace_close( arg => $last ) if $TRACE;
                     return $last;
             }
             # find out the tail
@@ -986,7 +986,7 @@ sub offset {
         $tail  = $tail->_function( 'offset', @_ );
         $b1->{last} = [$last, $tail];
 
-        $self->trace_close( arg => $b1 );
+        $self->trace_close( arg => $b1 ) if $TRACE;
         return $b1;
     }
 
@@ -1014,7 +1014,7 @@ sub offset {
             }
             $b1->{list} = \@a;        # change data
             $b1->{cant_cleanup} = 1;
-            $self->trace_close( arg => $b1 );
+            $self->trace_close( arg => $b1 ) if $TRACE;
             return $b1;
     }
 
@@ -1078,7 +1078,7 @@ sub offset {
     @a = sort { $a->{a} <=> $b->{a} } @a;
     $b1->{list} = \@a;        # change data
     $b1->{cant_cleanup} = 1; 
-    $self->trace_close( arg => $b1 );
+    $self->trace_close( arg => $b1 ) if $TRACE;
     return $b1;
 }
 
@@ -1122,7 +1122,7 @@ sub _quantize_span {
             else {
                 $res = $self; # ->_function( "_quantize_span", %param );
             }
-            $self->trace_close( arg => $res );
+            $self->trace_close( arg => $res ) if $TRACE;
             return $res;
         }
 
@@ -1277,7 +1277,7 @@ sub backtrack {
     $result = $result1->$method (@param);
     print " [bt$backtrack_depth-3-19:RESULT ",ref($result), "=",join(";",%{$result}),"=$result] \n" if $DEBUG_BT;
     $backtrack_depth--;
-    $self->trace_close( arg => $result );
+    $self->trace_close( arg => $result ) if $TRACE;
     return $result;
 }
 
@@ -1497,6 +1497,126 @@ sub contains {
     return ($b1 == $a) ? 1 : 0;
 }
 
+my %_min = (
+    'iterate' => 
+            sub {
+                my ($self) = shift;
+                my @parent = $self->{parent}->min_a;
+                unless (defined $parent[0]) {
+                    return @{$self->{min}} = @parent;  # undef
+                }
+                my $min = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
+                @parent = $min->min_a;
+                return @{$self->{min}} = @parent;
+            },
+    'complement' =>
+            sub {
+                my ($self) = shift;
+                my @parent = $self->{parent}->min_a;
+                unless (defined $parent[0]) {
+                    return @{$self->{min}} = @parent;  # undef
+                }
+                if ($parent[0] != $neg_inf) {
+                    return @{$self->{min}} = ($neg_inf, 1);
+                }
+                my $first = $self->first;
+                unless (defined $first) {
+                    return @{$self->{min}} = (undef, 0);
+                }
+                @parent = $first->max;
+                $parent[1] = defined $parent[1] ? 1 - $parent[1] : 1;  # invert open/close set
+                return @{$self->{min}} = @parent;
+            },
+    union =>
+            sub {
+                my ($self) = shift;
+                my @p1 = $self->{parent}[0]->min_a;
+                my @p2 = $self->{parent}[1]->min_a;
+                unless (defined $p1[0]) {
+                    return @{$self->{min}} = @p1 ;
+                }
+                unless (defined $p2[0]) {
+                    return @{$self->{min}} = @p2 ;
+                }
+                if ($p1[0] == $p2[0]) {
+                    $p1[1] =  $p1[1] ? $p1[0] : $p1[1] ;
+                    return @{$self->{min}} = @p1;
+                }
+                return @{$self->{min}} = $p1[0] < $p2[0] ? @p1 : @p2;
+            },
+    intersection =>
+            sub {
+                my ($self) = shift;
+                my @first = $self->first;
+                unless (defined $first[0]) {
+                    return @{$self->{min}} = (undef, 0);
+                }
+                my @min = $first[0]->min;
+                return @{$self->{min}} = @min;
+            },
+); # %_min
+
+my %_max = (
+    'iterate' =>
+            sub {
+                my ($self) = shift;
+                my @parent = $self->{parent}->max_a;
+                unless (defined $parent[0]) {
+                    return @{$self->{max}} = @parent;  # undef
+                }
+                my $max = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
+                @parent = $max->max_a;
+                return @{$self->{max}} = @parent;
+            },
+    'complement' =>
+            sub {
+                my ($self) = shift;
+                my @parent = $self->{parent}->min_a;
+                unless (defined $parent[0]) {
+                    return @{$self->{max}} = @parent;
+                }
+                if ( $parent[0] == -&inf ) {
+                    return @{$self->{max}} = ($inf, 1);
+                }
+                $parent[1] = 1 - $parent[1];  # invert open/close set
+                return @{$self->{max}} = @parent;
+            },
+    'union' =>
+            sub {
+                my ($self) = shift;
+                my @p1 = $self->{parent}[0]->max_a;
+                unless (defined $p1[0]) {
+                    return @{$self->{max}} = @p1;
+                }
+                my @p2 = $self->{parent}[1]->max_a;
+                unless (defined $p2[0]) {
+                    return @{$self->{max}} = @p2;
+                }
+                if ($p1[0] == $p2[0]) {
+                    $p1[1] = $p1[1] ? $p1[0] : $p1[1];
+                    return @{$self->{max}} = @p1;
+                }
+                return @{$self->{max}} = $p1[0] > $p2[0] ? @p1 : @p2;
+            },
+    'intersection' =>
+            sub {
+                my ($self) = shift;
+                my @p1 = $self->{parent}[0]->max_a;
+                unless (defined $p1[0]) {
+                    return @{$self->{max}} = @p1;
+                }
+                my @p2 = $self->{parent}[1]->max_a;
+                unless (defined $p2[0]) {
+                    return @{$self->{max}} = @p2;
+                }
+                if ($p1[0] == $p2[0]) {
+                    $p1[1] = $p1[1] ? $p1[1] : $p1[0];
+                    return @{$self->{max}} = @p1;
+                }
+                return @{$self->{max}} = $p1[0] < $p2[0] ? @p1 : @p2;
+            },
+); # %_max
+
 sub min_a { 
     my ($self) = shift;
     if (exists $self->{min} ) {
@@ -1504,50 +1624,12 @@ sub min_a {
         return @{$self->{min}};
     }
     $self->trace_open(title=>"min_a") if $TRACE; 
-    my $tmp;
-    my $i;
     if ($self->{too_complex}) {
         my $method = $self->{method};
-        # offset, select, quantize
+
+        return $_min{$method}->($self) if exists $_min{$method};
+
         if ( ref $self->{parent} ne 'ARRAY' ) {
-            my @parent;
-            # warn " min ",$self->{method}," ",$self->{parent}->min_a;
-
-            if ($method eq 'iterate') {
-                # warn "min of iterate";
-                @parent = $self->{parent}->min_a;
-                unless (defined $parent[0]) {
-                    $self->trace_close( arg => "@parent" ) if $TRACE;
-                    return @{$self->{min}} = @parent;  # undef
-                }
-                # warn "min of iterate @parent";
-                my $min = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
-                # warn "iterate got ". $min->min->ymd;
-                @parent = $min->min_a;
-                $self->trace_close( arg => "@parent" ) if $TRACE;
-                return @{$self->{min}} = @parent;
-            }
-
-            if ($method eq 'complement') {
-                @parent = $self->{parent}->min_a;
-                unless (defined $parent[0]) {
-                    $self->trace_close( arg => "@parent" ) if $TRACE;
-                    return @{$self->{min}} = @parent;  # undef
-                }
-                if ($parent[0] != -$inf) {
-                    $self->trace_close( arg => "-$inf 1" ) if $TRACE;
-                    return @{$self->{min}} = (-$inf, 1);
-                }
-                my $first = $self->first;
-                unless (defined $first) {
-                    $self->trace_close( arg => "undef" ) if $TRACE;
-                    return @{$self->{min}} = (undef, 0);
-                }
-                @parent = $first->max;
-                $parent[1] = defined $parent[1] ? 1 - $parent[1] : 1;  # invert open/close set
-                $self->trace_close( arg => "@parent" ) if $TRACE;
-                return @{$self->{min}} = @parent;
-            }
 
             my @first = $self->{parent}->first;
             unless (defined $first[0]) {
@@ -1560,45 +1642,9 @@ sub min_a {
             return @{$self->{min}} = @min;
 
         }
-        else {
-            if ($method eq 'union') {
-
-                my @p1 = $self->{parent}[0]->min_a;
-                my @p2 = $self->{parent}[1]->min_a;
-                unless (defined $p1[0]) {
-                    $self->trace_close( arg => 'undef 0' ) if $TRACE;
-                    return @{$self->{min}} = @p1 ;
-                }
-                # my @p2 = $self->{parent}[1]->min_a;
-                unless (defined $p2[0]) {
-                    $self->trace_close( arg => 'undef 0' ) if $TRACE;
-                    return @{$self->{min}} = @p2 ;
-                }
-
-                if ($p1[0] == $p2[0]) {
-                    $p1[1] =  $p1[1] ? $p1[0] : $p1[1] ;
-                    $self->trace_close( arg => "@p1" ) if $TRACE;
-                    return @{$self->{min}} = @p1;
-                }
-                $self->trace_close( arg => ($p1[0] < $p2[0] ? "@p1" : "@p2") ) if $TRACE;
-                return @{$self->{min}} = $p1[0] < $p2[0] ? @p1 : @p2;
-            }
-            if ($method eq 'intersection') {
-
-                my @first = $self->first;
-                unless (defined $first[0]) {
-                    $self->trace_close( arg => "undef 0" ) if $TRACE;
-                    return @{$self->{min}} = (undef, 0);
-                }
-                my @min = $first[0]->min;
-                $self->trace_close( arg => "@min" ) if $TRACE;
-                return @{$self->{min}} = @min;
-
-            }
-        }
     }
 
-    $self->trace( title=> 'min simple tolerance='. $self->{tolerance}  );
+    $self->trace( title=> 'min simple tolerance='. $self->{tolerance}  ) if $TRACE;
     $self->trace_close( arg => 'undef 0' ) if $TRACE;
     return $self->SUPER::min_a;
 };
@@ -1607,51 +1653,22 @@ sub min_a {
 sub max_a { 
     my ($self) = shift;
     return @{$self->{max}} if exists $self->{max};
-    my $tmp;
-    my $i;
     $self->trace_open(title=>"max_a") if $TRACE; 
     if ($self->{too_complex}) {
         my $method = $self->{method};
-        # offset, select, quantize
+
+        return $_max{$method}->($self) if exists $_max{$method};
+
         if ( ref $self->{parent} ne 'ARRAY' ) {
-            my @parent;
-            # print " max ",$self->{method}," ",$self->{parent}->max_a,"\n";
 
-            if ($method eq 'iterate') {
-                @parent = $self->{parent}->max_a;
-                unless (defined $parent[0]) {
-                    $self->trace_close( arg => "@parent" ) if $TRACE;
-                    return @{$self->{max}} = @parent;  # undef
-                }
-                my $max = $self->new( $parent[0] )->iterate( @{ $self->{param} } );
-                @parent = $max->max_a;
-                $self->trace_close( arg => "@parent" ) if $TRACE;
-                return @{$self->{max}} = @parent;
-            }
-
-            if ($method eq 'complement') {
-                @parent = $self->{parent}->min_a;
-                unless (defined $parent[0]) {
-                    $self->trace_close( arg => "undef" ) if $TRACE;
-                    return @{$self->{max}} = @parent;
-                }
-                if ( $parent[0] == -&inf ) {
-                    $self->trace_close( arg => "$inf 1" ) if $TRACE;
-                    return @{$self->{max}} = ($inf, 1);
-                }
-                $parent[1] = 1 - $parent[1];  # invert open/close set
-                $self->trace_close( arg => "@parent" ) if $TRACE;
-                return @{$self->{max}} = @parent;
-            }
-
-            @parent = $self->{parent}->max_a;
+            my @parent = $self->{parent}->max_a;
             unless (defined $parent[0]) {
                 $self->trace_close( arg => "undef" ) if $TRACE;
                 return @{$self->{max}} = @parent;
             }
 
             #  - 1e-10 is a fixup for open sets
-            $tmp = $parent[0];
+            my $tmp = $parent[0];
             # $tmp -= 1e-10 if $parent[1] and ($method eq 'quantize');
             if ( ($tmp == &inf) or ($tmp == -&inf) ) {
                 $self->trace_close( arg => "$tmp 1" ) if $TRACE;
@@ -1689,36 +1706,6 @@ sub max_a {
             @{$self->{max}} = $self->new( $sample )->$method( @{$self->{param}} )->max_a;
             $self->trace_close( arg => "@{$self->{max}}" ) if $TRACE;
             return @{$self->{max}} ;
-        }
-        else {
-            my @p1 = $self->{parent}[0]->max_a;
-            unless (defined $p1[0]) {
-                $self->trace_close( arg => "@p1" ) if $TRACE;
-                return @{$self->{max}} = @p1;
-            }
-            my @p2 = $self->{parent}[1]->max_a;
-            unless (defined $p2[0]) {
-                $self->trace_close( arg => "@p2" ) if $TRACE;
-                return @{$self->{max}} = @p2;
-            }
-            if ($method eq 'union') {
-                if ($p1[0] == $p2[0]) {
-                    $p1[1] = $p1[1] ? $p1[0] : $p1[1];
-                    $self->trace_close( arg => "@p1" ) if $TRACE;
-                    return @{$self->{max}} = @p1;
-                }
-                $self->trace_close( arg => ( $p1[0] > $p2[0] ? "@p1" : "@p2" ) ) if $TRACE;
-                return @{$self->{max}} = $p1[0] > $p2[0] ? @p1 : @p2;
-            }
-            if ($method eq 'intersection') {
-                if ($p1[0] == $p2[0]) {
-                    $p1[1] = $p1[1] ? $p1[1] : $p1[0];
-                    $self->trace_close( arg => "@p1" ) if $TRACE;
-                    return @{$self->{max}} = @p1;
-                }
-                $self->trace_close( arg => ( $p1[0] < $p2[0] ? "@p1" : "@p2" ) ) if $TRACE;
-                return @{$self->{max}} = $p1[0] < $p2[0] ? @p1 : @p2;
-            }
         }
     }
     $self->trace_close( arg => "undef 0" ) if $TRACE;
