@@ -1112,17 +1112,17 @@ sub intersection {
 
 sub intersected_spans {
     my $a1 = shift;
-    my $b1 = (ref ($_[0]) eq ref($a1) ) ? shift : $a1->new(@_);
+    my $b1 = ref ($_[0]) eq ref($a1) ? $_[0] : $a1->new(@_);
 
-    # try to simplify $b1
-    $b1 = $b1->intersection( $a1 )
-        if $b1->{too_complex} && ! $a1->{too_complex};
+    if ( $b1->{too_complex} && ! $a1->{too_complex} )
+    {
+        $b1 = $b1->intersection( $a1 );
+    }
 
-    # -- this should be an optimization, but it seems to be slower.
-    # return $a1->iterate(
-    #   # sub { return $_[0] if $b1->intersects( $_[0] ) }
-    #   sub { return $_[0] if $_[0]->intersects( $b1 ) }
-    # ) if ! $a1->{too_complex};
+    if ( ! $b1->{too_complex} && ! $a1->{too_complex} )
+    {
+        return $a1->SUPER::intersected_spans ( $b1 );
+    }
 
     return $b1->iterate(
         sub {

@@ -420,25 +420,36 @@ sub intersects {
     return _intersection ( 'intersects', $a1, $b1 );
 }
 
+sub intersected_spans {
+    my $a1 = shift;
+    my $b1 = ref ($_[0]) eq ref($a1) ? $_[0] : $a1->new(@_);
+    return _intersection ( 'intersected_spans', $a1, $b1 );
+}
+
+
 sub _intersection {
     my ( $op, $a1, $b1 ) = @_;
-    my ($ia, $ib);
-    my ($ma, $mb) = ($#{$a1->{list}}, $#{$b1->{list}});
-    my $intersection = $a1->empty_set();
-    # for-loop optimization (makes little difference)
-    if ($ma < $mb) { 
-        ($ma, $mb) = ($mb, $ma);
-        ($a1, $b1) = ($b1, $a1);
-    }
-    my ($tmp1, $tmp2, $tmp1a, $tmp2a, $tmp1b, $tmp2b, $i_beg, $i_end, $open_beg, $open_end, $cmp1);
-    my $a0 = 0;
+
+    my $ia;   
+    my ( $a0, $na ) = ( 0, $#{$a1->{list}} );
+    my ( $tmp1, $tmp1a, $tmp2a, $tmp1b, $tmp2b, $i_beg, $i_end, $open_beg, $open_end );
+    my ( $cmp1, $cmp2 );
     my @a;
 
-    B: foreach $ib (0 .. $mb) {
-        $tmp2 = $b1->{list}[$ib];
+    # for-loop optimization (makes little difference)
+    # This was kept for backward compatibility with Date::Set tests
+    my $self = $a1;
+    if ($na < $#{ $b1->{list} })
+    {
+        $na = $#{ $b1->{list} };
+        ($a1, $b1) = ($b1, $a1);
+    }
+    # ---
+
+    B: foreach my $tmp2 ( @{ $b1->{list} } ) {
         $tmp2a = $tmp2->{a};
         $tmp2b = $tmp2->{b};
-        A: foreach $ia ($a0 .. $ma) {
+        A: foreach $ia ($a0 .. $na) {
             $tmp1 = $a1->{list}[$ia];
             $tmp1b = $tmp1->{b};
 
@@ -450,44 +461,54 @@ sub _intersection {
             if ($tmp1a > $tmp2b) {
                 next B;
             }
-            if ($tmp1a < $tmp2a) {
+
+            $cmp1 = $tmp1a <=> $tmp2a;
+            if ( $cmp1 < 0 ) {
                 $tmp1a        = $tmp2a;
                 $open_beg     = $tmp2->{open_begin};
             }
-            elsif ($tmp1a == $tmp2a) {
-                $open_beg     = ($tmp1->{open_begin} or $tmp2->{open_begin});
-            }
-            else {
+            elsif ( $cmp1 ) {
                 $open_beg     = $tmp1->{open_begin};
             }
+            else {
+                $open_beg     = $tmp1->{open_begin} || $tmp2->{open_begin};
+            }
 
-            if ($tmp1b > $tmp2b) {
+            $cmp2 = $tmp1b <=> $tmp2b;
+            if ( $cmp2 > 0 ) {
                 $tmp1b        = $tmp2b;
                 $open_end     = $tmp2->{open_end};
             }
-            elsif ($tmp1b == $tmp2b) {
-                $open_end     = ($tmp1->{open_end} or $tmp2->{open_end});
+            elsif ( $cmp2 ) {
+                $open_end     = $tmp1->{open_end};
             }
             else {
-                $open_end    = $tmp1->{open_end};
+                $open_end     = $tmp1->{open_end} || $tmp2->{open_end};
             }
-            if ( ( $tmp1a <= $tmp1b ) and
-                 ( ($tmp1a != $tmp1b) or 
-                   (!$open_beg and !$open_end) or
-                   ($tmp1a == $inf) or                 # XXX
+
+            if ( ( $tmp1a <= $tmp1b ) &&
+                 ( ($tmp1a != $tmp1b) || 
+                   (!$open_beg and !$open_end) ||
+                   ($tmp1a == $inf)   ||               # XXX
                    ($tmp1a == $neg_inf)
                  )
                ) 
             {
                 if ( $op eq 'intersection' )
                 {
-                    push @a, 
-                    { a => $tmp1a, b => $tmp1b, 
-                      open_begin => $open_beg, open_end => $open_end } ;
+                    push @a, {
+                        a => $tmp1a, b => $tmp1b, 
+                        open_begin => $open_beg, open_end => $open_end } ;
                 }
                 if ( $op eq 'intersects' )
                 {
                     return 1;
+                }
+                if ( $op eq 'intersected_spans' )
+                {
+                    push @a, $tmp1;
+                    $a0++;
+                    next A;
                 }
             }
         }
@@ -495,6 +516,7 @@ sub _intersection {
 
     return 0 if $op eq 'intersects';
    
+    my $intersection = $self->new();
     $intersection->{list} = \@a;
     return $intersection;    
 }
