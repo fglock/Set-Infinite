@@ -13,6 +13,16 @@ WriteMakefile(
         'Time::Local'   => 0,
         'Test::More'    => 0, 
     },
+    META_MERGE        => {
+        'meta-spec'     => { version => 2 },
+        resources       => {
+            repository    => {
+                type        => 'git',
+                url         => 'https://github.com/fglock/Set-Infinite.git',
+                web         => 'https://github.com/fglock/Set-Infinite',
+            },
+        },
+    },
     'dist'            => { 'COMPRESS' => 'gzip' },
 );
 
