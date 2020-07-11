@@ -486,13 +486,17 @@ sub _intersection {
                 $open_end     = $tmp1->{open_end} || $tmp2->{open_end};
             }
 
-            if ( ( $tmp1a <= $tmp1b ) &&
-                 ( ($tmp1a != $tmp1b) || 
+            my $cmp1a1b = $tmp1a <=> $tmp1b;
+
+            if ( ( $cmp1a1b <= 0 ) &&                   # $tmp1a <= $tmp1b
+                 ( ($cmp1a1b != 0) ||
                    (!$open_beg and !$open_end) ||
-                   ($tmp1a == $inf)   ||               # XXX
-                   ($tmp1a == $neg_inf)
+                   (!ref($tmp1a) &&  (
+                       ($tmp1a == $inf)   ||               # XXX
+                       ($tmp1a == $neg_inf)
+                   ))
                  )
-               ) 
+               )
             {
                 if ( $op eq 'intersection' )
                 {
